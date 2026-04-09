@@ -271,17 +271,28 @@ export default function Discovery() {
             {/* Cost reference */}
             <div className="bg-bg-card border border-border rounded-lg p-4">
               <h3 className="text-xs font-mono text-text-muted uppercase tracking-widest mb-3">
-                Estimated runtime for 10 seeds
+                How cost works
               </h3>
-              <ol className="space-y-2 text-xs text-text-secondary font-mono">
-                <li><span className="text-accent-blue">1.</span> Resolve 10 handle IDs — 5s, ~$0.10</li>
-                <li><span className="text-accent-blue">2.</span> Fetch /following (10 seeds × avg 300 followings) — 30s, ~$26</li>
-                <li><span className="text-accent-blue">3.</span> Compute mutual matrix (45 pairs) — 1s, free</li>
-                <li><span className="text-accent-blue">4.</span> Hub expansion analysis — 2s, free</li>
-                <li><span className="text-accent-blue">5.</span> Graph construction + clustering — 3s, free</li>
-              </ol>
-              <div className="mt-3 pt-3 border-t border-border text-[11px] text-text-muted">
-                Seeds already in our database return instantly at $0 — no X API call needed.
+              <div className="space-y-2 text-xs font-mono">
+                <div className="flex items-start gap-3 p-2 rounded bg-accent-emerald/5 border border-accent-emerald/20">
+                  <span className="text-accent-emerald mt-0.5">$0</span>
+                  <div className="text-text-secondary">
+                    <span className="text-accent-emerald font-semibold">Cached seeds</span> — handle already in our database.
+                    Returns instantly, no X API call.
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-2 rounded bg-bg-panel border border-border">
+                  <span className="text-accent-amber mt-0.5">$$$</span>
+                  <div className="text-text-secondary">
+                    <span className="text-text-primary font-semibold">New seeds</span> — fetches /following via X API
+                    ($0.0088 per user returned, ~300 avg = ~$2.60/seed).
+                    Result is cached in Supabase — free on next use.
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3 pt-3 border-t border-border text-[11px] text-text-muted leading-relaxed">
+                Our database already has following data for <span className="text-accent-emerald">12 anchor KOLs</span>.
+                If your seeds overlap with their networks, mutual-follow detection is free.
               </div>
             </div>
           </div>
