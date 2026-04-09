@@ -1,18 +1,16 @@
 # AI KOL Intelligence Engine
 
-> **Trial task deliverable.** A referral-chain discovery engine for AI + Crypto KOLs on Chinese/English Twitter. Data pipeline in Python + Supabase, static React demo as the user-facing product.
+> **Trial task deliverable.** 数据管道通过 X API v2 构建 KOL 数据库和 mutual-follow 社交图谱，React 前端展示评分、网络关系和 outreach 优先级。
 
 ---
 
 ## What this is
 
-An end-to-end system for discovering, scoring, and routing outreach to AI+Crypto KOLs. The core insight: **mutual follow is the only confirmed relationship signal** on Twitter/X. Everything else — one-way follows, interaction counts, sector labels — is a targeting hint, not evidence of "they're in the same circle".
-
 Four pieces:
 
 1. **Python pipeline** (`pipeline/`, `scoring/`) — X API v2 ingestion, Claude-based classification (real human vs org, sector, language, etc.), mutual-follow graph construction, three-layer parallel scoring, Louvain community detection.
 2. **Supabase Postgres** (`supabase/`) — single source of truth for users / follows / tweets / seeds. The pipeline writes to it; the frontend reads static JSON exports produced from it.
-3. **React demo** (`kol-intelligence-engine/`) — Vite + React + TailwindCSS. 11 pages including KOL Database, Network Graph, **Outreach Priority Panel** (the killer feature), AI Agent, Discovery Pipeline.
+3. **React demo** (`kol-intelligence-engine/`) — Vite + React + TailwindCSS. 11 pages including KOL Database, Network Graph, Outreach Priority Panel, AI Agent, Discovery Pipeline (with Import Your Own Seeds).
 4. **Five demo-mode pages** showing planned features (Guilds, Brief Generator, Campaign Simulator, 3rd-party integration, On-chain Verification).
 
 ---
@@ -25,9 +23,9 @@ After running the full pipeline, you get:
 - **27 mutual-follow-verified network members** (16 ground-truth seeds + 11 hub-verified additions) with PageRank, betweenness, cluster assignment, cross-cluster bridge ratio
 - **4106 directed follow edges** in the `follows` table producing **98 mutual edges** in the mutual subgraph
 - **A three-column Outreach Priority Panel** sorting the 27 mutual members into:
-  - 🗝️ **Gateway KOLs** (13) — attack first, high referral potential
-  - 🎯 **Strategic Targets** (2) — important but hard to reach, use Gateway warm intros
-  - ⚡ **Quick Wins** (5) — easy bookings for testimonials
+  - 🗝️ **Gateway KOLs** (13) — high cooperability + high referral unlock value
+  - 🎯 **Strategic Targets** (2) — high importance, low cooperability; reach via Gateway intros
+  - ⚡ **Quick Wins** (5) — high cooperability, limited network unlock
 
 ---
 
@@ -39,6 +37,16 @@ If you just want to see the React demo without running the pipeline, the static 
 cd kol-intelligence-engine
 npm install
 npm run dev    # http://127.0.0.1:5175
+```
+
+### Import Your Own Seeds
+
+Demo 不只是一个静态展示。在 `/discovery` 页面切换到 **Mode B — Import Your Own Seeds**，粘贴你自己的 KOL handle 列表，系统会用同一套 pipeline 逻辑构建以你的 handle 为锚点的网络图、评分和 outreach 优先级。
+
+生产环境下 Mode B 会调用本地 Python backend（`pipeline/server.py`）执行真实的 X API v2 请求。Demo 模式下展示的是模拟的 pipeline 动画 + 说明如何在本地跑完整流程：
+
+```bash
+python pipeline/run_custom_seeds.py --input my_seeds.txt
 ```
 
 ---
@@ -133,7 +141,7 @@ python3 -m pytest scoring/test_score_kol.py -v
 
 ## Methodology note
 
-This project deliberately **only** trusts mutual-follow as ground truth for "this KOL is in the circle". One-way follows (anchor → celebrity) are tracked but visually demoted and excluded from PageRank/cluster computation to prevent celebrity-bias contamination (the "everyone follows Jack Ma, but does he follow you back?" problem). Celebrities are auto-detected by follower count outliers (≥ 5× median anchor followers, or ≥ 2× max anchor followers, or ≥ 250K followers with ≤ 5 anchor follows) and filtered from default views.
+社交图谱仅以 mutual follow 为关系边。单向关注和名人节点（粉丝量异常高但圈内互关极少）被自动检测并从默认视图中过滤。
 
 See [`supabase/schema.sql`](supabase/schema.sql) for the canonical data model.
 
