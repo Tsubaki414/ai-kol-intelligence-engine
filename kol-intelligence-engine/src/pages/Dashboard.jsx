@@ -300,8 +300,6 @@ export default function Dashboard() {
     const avgCoop =
       kolsData.kols.reduce((s, k) => s + (k.cooperability_score || 0), 0) /
       Math.max(total, 1);
-    const zhCount = kolsData.kols.filter((k) => k.language === "zh").length;
-    const enCount = kolsData.kols.filter((k) => k.language === "en").length;
     return {
       total,
       mutual,
@@ -310,8 +308,6 @@ export default function Dashboard() {
       qualityScoredCount: qualityRows.length,
       avgQuality: avgQuality ? avgQuality.toFixed(0) : "—",
       avgCoop: avgCoop.toFixed(0),
-      zhPercent: Math.round((zhCount / total) * 100),
-      enPercent: Math.round((enCount / total) * 100),
     };
   }, []);
 
@@ -344,10 +340,6 @@ export default function Dashboard() {
               accent="emerald"
             />
             <StatCard label="Avg C" value={stats.avgCoop} accent="blue" />
-            <StatCard
-              label="zh / en"
-              value={`${stats.zhPercent}% / ${stats.enPercent}%`}
-            />
           </div>
         </div>
 

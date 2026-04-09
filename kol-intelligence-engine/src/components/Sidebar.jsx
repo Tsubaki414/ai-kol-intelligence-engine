@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import graphData from "../data/graph.json";
+import graphMeta from "../data/graph_meta.json";
 
 const FULL_FEATURES = [
   { to: "/dashboard", label: "KOL Database", icon: "📊" },
@@ -71,14 +71,14 @@ export default function Sidebar() {
 
       <div className="border-t border-border px-4 py-3 text-[10px] text-text-muted font-mono">
         <div>
-          <span className="text-accent-emerald">{graphData.metadata.mutual_members || 16}</span> mutual ·{" "}
-          {graphData.metadata.watched_nodes || 0} watched ·{" "}
-          <span className="text-accent-rose">{graphData.metadata.celebrity_filtered || 0}</span> filtered
+          <span className="text-accent-emerald">{graphMeta.mutual_members}</span> mutual ·{" "}
+          {graphMeta.watched_nodes} watched ·{" "}
+          <span className="text-accent-rose">{graphMeta.celebrity_filtered}</span> filtered
         </div>
         <div className="mt-0.5">
-          {graphData.metadata.total_nodes} nodes ·{" "}
-          {graphData.metadata.total_edges.toLocaleString()} edges ·{" "}
-          {graphData.metadata.connected_clusters || graphData.metadata.clusters_found} clusters
+          {graphMeta.total_nodes} nodes ·{" "}
+          {graphMeta.total_edges.toLocaleString()} edges ·{" "}
+          {graphMeta.connected_clusters} clusters
         </div>
       </div>
     </aside>
