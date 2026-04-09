@@ -1,0 +1,51 @@
+{
+  "metadata": {
+    "generated_at": "2026-04-08",
+    "model": "claude-sonnet-4-5",
+    "total_tokens_in": 4691,
+    "total_tokens_out": 3871,
+    "estimated_cost_usd": 0.072,
+    "data_sources": [
+      "graph.json",
+      "kols.json"
+    ],
+    "prompt_count": 5
+  },
+  "responses": [
+    {
+      "prompt": "帮我找 5 个适合推广 AI Agent 项目的中文 KOL",
+      "response": "# AI Agent 项目推广 - 5 位精选中文 KOL 推荐\n\n基于网络数据分析,以下是最适合推广 AI Agent 项目的 5 位核心 KOL:\n\n## 🎯 核心推荐(按优先级排序)\n\n### 1. **@lanhubiji** (蓝狐笔记)\n- **PageRank**: 0.0556 (#5)\n- **所属**: Cluster #3 (circles hub)\n- **推荐理由**: 作为华语区顶级加密分析师,在 AI+Crypto 交叉领域有极强影响力。高 PageRank 确保触达核心受众,且作为 circles hub 可同时覆盖多个社群。\n\n### 2. **@kuigas** \n- **PageRank**: 0.069166 (#1 最高)\n- **Betweenness**: 0.10285 (#2)\n- **推荐理由**: 网络中心度最高的 KOL,Cluster 3 入口节点。既是 Virtuals Chinese Builders(C1)成员,又是跨社群桥梁,能最大化曝光范围。\n\n### 3. **@web3sistera**\n- **PageRank**: 0.057017 (#3)\n- **Betweenness**: 0.128379 (#1 最高)\n- **推荐理由**: 最强跨社群连接者,Cluster 1 入口节点。其桥梁地位确保信息可跨 C1/C2/C3 三大圈层传播,适合制造话题扩散。\n\n### 4. **@biteyecn** (Biteye)\n- **PageRank**: 0.061972 (#2)\n- **所属**: Cluster #3, Web3 媒体背景\n- **推荐理由**: 专业 Web3 媒体账号,内容质量高且受众精准。在 XHunt/Biteye 媒体圈(C2)有原生影响力,适合深度测评类合作。\n\n### 5. **@jason_chen998**\n- **PageRank**: 0.046273 (#8)\n- **所属**: Cluster #3 (circles hub)\n- **推荐理由**: 华语主流分析圈(C3)核心成员,受众成熟度高。适合针对资深投资者的技术解读和项目分析。\n\n## 📊 执行策略\n\n**阶段一**: 先与 @kuigas 和 @lanhubiji 建立合作(最高中心度),确保基础曝光\n**阶段二**: 通过 @web3sistera 的桥梁效应引爆跨圈讨论\n**阶段三**: 借助 @biteyecn 媒体属性产出深度内容,@jason_chen998 覆盖分析师群体\n\n这 5 位 KOL 覆盖了网络中 Cluster 0/1/3 三大核心社群,PR 总和占 Top 10 的 60%,能确保 AI Agent 项目在华语 AI+Crypto 圈层获得最大声量。",
+      "model": "claude-sonnet-4-5",
+      "tokens_in": 942,
+      "tokens_out": 885
+    },
+    {
+      "prompt": "Generate an outreach email for @starzq about our AI infrastructure project",
+      "response": "# Outreach Email Template for @starzq\n\n## Email Draft\n\n**Subject:** AI基础设施项目合作机会 | Partnership Opportunity on AI Infrastructure\n\n---\n\n尊敬的 starzq，\n\n您好！我是 [Your Name]，来自 [Agency Name]，一家专注于AI+Crypto领域的营销机构。\n\n我们一直关注您在中文加密社区的深度影响力。根据我们的KOL网络分析，您在华语AI+Crypto圈层中拥有**顶级的网络中心度**（PageRank #6，Betweenness #7），是连接多个核心社群的关键节点，尤其在Cluster #3中扮演重要角色。\n\n## 项目简介\n\n我们正在推广一个**AI基础设施项目**，专注于 [具体技术方向，如：去中心化AI计算网络/AI Agent开发平台/链上AI推理层]。该项目的核心优势包括：\n\n- [技术亮点1]\n- [技术亮点2]  \n- [代币经济学/生态激励机制]\n\n## 合作提案\n\n考虑到您在AI+Crypto交叉领域的专业度和影响力，我们希望探讨以下合作形式：\n\n1. **深度内容共创** - 技术解读文章/视频，展示项目创新点\n2. **社区AMA** - 面向您的粉丝群体进行项目介绍和问答\n3. **早期体验官** - 优先体验产品并分享真实反馈\n4. **长期顾问** - 就中文市场策略提供建议\n\n## 为什么选择您？\n\n- 您的内容聚焦质量而非炒作，与我们的技术驱动理念契合\n- 您在Virtuals中文建设者、XHunt/Biteye媒体圈、华语主流分析圈都有深度联系\n- 您的跨圈层影响力能帮助我们触达**技术开发者、投资分析师、项目方**等多元受众\n\n我们准备了详细的项目资料和合作方案。如果您有兴趣，我可以安排15-20分钟的视频通话深入交流。\n\n期待您的回复！\n\n此致  \n[Your Name]  \n[Title] | [Agency Name]  \n[Contact Info]\n\n---\n\n## Customization Notes\n\n- Replace bracketed placeholders with actual project details\n- Attach 1-page project brief in Chinese\n- Follow up via Twitter DM if no email response in 3 days\n- Reference specific content @starzq has posted if available to show genuine familiarity",
+      "model": "claude-sonnet-4-5",
+      "tokens_in": 931,
+      "tokens_out": 744
+    },
+    {
+      "prompt": "Which KOLs have the highest cross-circle influence in the graph?",
+      "response": "# KOLs with Highest Cross-Circle Influence\n\n## Top Cross-Circle Bridge KOLs\n\nBased on the network analysis, the following KOLs demonstrate the strongest **cross-circle influence** through their betweenness centrality (ability to bridge different communities) combined with multi-circle membership:\n\n### Tier 1: Elite Bridges (BC > 0.09)\n1. **@web3sistera** (BC: 0.128379, PR: 0.057017)\n   - Cluster #1 entry point + \"circles hub\" designation\n   - Highest betweenness = maximum cross-cluster connectivity\n   - Critical bridge between C1 (Virtuals Chinese Builders) and broader network\n\n2. **@kuigas** (BC: 0.10285, PR: 0.069166)\n   - Cluster #3 entry point + spans C1\n   - #1 PageRank globally = maximum visibility reach\n   - Dual bridge role (cluster entry + cross-circle)\n\n3. **@biteyecn** (BC: 0.101672, PR: 0.061972)\n   - Cluster #3 + \"circles hub\"\n   - Represents Biteye Web3 Media ecosystem (C2)\n   - Strong institutional media connections\n\n4. **@lumaodoggie** (BC: 0.097546)\n   - Cluster #0 bridge + explicit bridge designation\n   - Fourth-highest betweenness despite lower PageRank\n   - Underrated connector between isolated clusters\n\n5. **@cryptosociety42** (BC: 0.091004, PR: 0.046238)\n   - Cluster #0 entry + bridge role\n   - C1 anchor = strong Virtuals builder network access\n\n### Tier 2: Strategic Bridges (BC: 0.05-0.08)\n6. **@rtk17025** (BC: 0.07824, PR: 0.045593)\n   - Cluster #1 bridge + C1 anchor\n   - Secondary connector for Virtuals ecosystem\n\n7. **@starzq** (BC: 0.051593, PR: 0.051922)\n   - Top-6 PageRank + moderate bridging\n   - Circles hub = multi-community respected voice\n\n## Strategic Recommendation\n\nFor **maximum cross-circle penetration**, prioritize this sequence:\n1. **@web3sistera** → Activates C1↔all paths\n2. **@kuigas** → Amplifies through highest PageRank\n3. **@lumaodoggie** → Reaches isolated Cluster #0 pockets\n4. **@biteyecn** → Institutional C2 media amplification\n\nThis combination covers all three ground-truth circles while leveraging both betweenness (bridging) and PageRank (amplification) advantages.",
+      "model": "claude-sonnet-4-5",
+      "tokens_in": 932,
+      "tokens_out": 670
+    },
+    {
+      "prompt": "推荐一个 $5,000 预算的 campaign 方案，target 中文 AI 圈",
+      "response": "# $5,000 中文 AI+Crypto KOL 营销方案\n\n## 一、核心策略：三层渗透法\n\n基于网络数据分析，采用\"超级节点+垂直破圈+社区激活\"组合打法，最大化覆盖中文AI加密圈。\n\n---\n\n## 二、KOL 配置方案（预算分配）\n\n### Tier 1：超级枢纽节点（$2,500 | 50%）\n**@lanhubiji** - PageRank #5, Betweenness #8  \n- **投放理由**：同时连接 C1（Virtuals建设者）和 C3（主流分析圈），是跨圈层信息传播的关键桥梁\n- **合作形式**：深度测评文章 + 3条Twitter thread ($1,500)\n\n**@kuigas** - PageRank #1, Betweenness #2  \n- **投放理由**：网络中心度最高，Cluster 3 入口节点，影响力辐射11个成员\n- **合作形式**：AMA 主持 + 项目解读长文 ($1,000)\n\n---\n\n### Tier 2：垂直破圈节点（$1,500 | 30%）\n**@web3sistera** - PageRenk #3, Betweenness #1  \n- **投放理由**：最强跨集群桥梁（BC 0.128），Cluster 1 入口，能触达技术建设者群体\n- **合作形式**：技术向 Twitter Space + 转发矩阵 ($800)\n\n**@biteyecn** - PageRank #2, Cluster 3 桥梁  \n- **投放理由**：Biteye 媒体背景，内容生产能力强，连接 C2 媒体圈\n- **合作形式**：研报式深度内容 + 社群分发 ($700)\n\n---\n\n### Tier 3：社区激活层（$800 | 16%）\n**@cryptosociety42** + **@rtk17025**  \n- **投放理由**：Cluster 0/1 的桥梁节点，擅长社区运营\n- **合作形式**：联合举办 AI Agent 主题 Twitter 抽奖活动，带动 UGC 传播 ($400×2)\n\n---\n\n## 三、执行时间线\n\n**Week 1**：@kuigas 发布项目解读 → **Week 2**：@lanhubiji 深度测评 + @web3sistera Space → **Week 3**：@biteyecn 研报 + 社区抽奖活动同步启动\n\n---\n\n## 四、预期效果\n- **直接触达**：5位KOL粉丝总量 15万+\n- **网络扩散**：通过桥梁节点渗透 C1/C2/C3 三大圈层\n- **二次传播**：社区活动预计带来 200+ UGC互动\n\n**预留 $200 用于应急调整/小额 Retweet 激励**",
+      "model": "claude-sonnet-4-5",
+      "tokens_in": 946,
+      "tokens_out": 866
+    },
+    {
+      "prompt": "Compare the Virtuals circle (C1) vs Biteye circle (C2) for a product launch",
+      "response": "# C1 (Virtuals Builders) vs C2 (Biteye/XHunt Media) - Product Launch Comparison\n\n## Network Position & Reach\n\n**C1 (Virtuals Chinese Builders)** dominates the network's top positions:\n- **5 of top 10 PageRank slots**: @kuigas (#1), @web3sistera (#3), @zksgu (#4), @lanhubiji (#5), @cryptosociety42 (#9)\n- **Controls 3 major clusters** (0, 1, 3) with 25 total members\n- **Superior bridge power**: @web3sistera has THE highest betweenness centrality (0.128) in the entire network\n\n**C2 (Biteye/XHunt Web3 Media)** shows institutional strength:\n- **@biteyecn ranks #2 overall** (PR 0.062), anchoring Cluster 3\n- **Cross-circle bridges**: colinwu and phyrexni connect C2→C3, enabling華語主流圈 spillover\n- **Professional media infrastructure** (Biteye/XHunt brands = content amplification)\n\n## Strategic Recommendations\n\n### Choose C1 if your product needs:\n- **Developer/builder evangelism** (Virtuals = tech-savvy early adopters)\n- **Organic viral spread**: C1 KOLs have 7 of top 10 betweenness scores → maximum cross-cluster diffusion\n- **Flexible collaboration**: Smaller, agile creators vs. media organizations\n\n**Activation sequence**:\n1. @web3sistera (bridge queen) for initial seeding\n2. @kuigas + @lanhubiji for Cluster 3 saturation\n3. @cryptosociety42 + @lumaodoggie for Cluster 0 expansion\n\n### Choose C2 if your product needs:\n- **Institutional credibility** (Biteye = established research brand)\n- **Polished content**: Professional articles, reports, video series\n- **C3華語圈 access**: Leverage colinwu/phyrexni bridges to reach mainstream Chinese crypto analysts\n\n**Activation sequence**:\n1. @biteyecn (core anchor, co-leads Cluster 3)\n2. colinwu/phyrexni (activate C2→C3 bridge)\n3. Coordinate with Biteye editorial for launch coverage\n\n## Blended Strategy (Recommended)\n**Phase 1**: Seed with C1 builders (@web3sistera, @kuigas) for authentic product-market fit signals  \n**Phase 2**: Amplify via C2 media (@biteyecn, Biteye channels) for professional reach  \n**Phase 3**: Leverage C2's C3-bridges for mainstream Chinese crypto audience penetration\n\n**Budget split**: 60% C1 (more KOLs, lower individual costs), 40% C2 (fewer handles, higher production value)",
+      "model": "claude-sonnet-4-5",
+      "tokens_in": 940,
+      "tokens_out": 706
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+# ============================================================
+# Secrets — NEVER commit
+# ============================================================
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.tw_session
+burner_session.*
+twscrape_accounts.txt
+
+# ============================================================
+# Python
+# ============================================================
+__pycache__/
+*.py[cod]
+*.so
+.venv/
+venv/
+env/
+.pytest_cache/
+scoring/__pycache__/
+pipeline/__pycache__/
+
+# ============================================================
+# Node / Vite
+# ============================================================
+node_modules/
+dist/
+build/
+.next/
+.vercel/
+
+# ============================================================
+# OS / Editor
+# ============================================================
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+*.backup
+
+# ============================================================
+# Logs
+# ============================================================
+*.log
+logs/
+
+# ============================================================
+# Pipeline working artifacts (regenerated from DB)
+# ============================================================
+pipeline_cache/
+twscrape.db
+twscrape.db-journal
+
+# Large intermediate JSON files (680+ KOLs × full metadata).
+# Supabase is now the source of truth. These files are kept locally as
+# backup/dev cache but regenerated on demand by scripts in scoring/ + pipeline/.
+pipeline/classified_kols.json
+pipeline/classified_kols.backup_pre_cleanup.json
+pipeline/classified_orgs.json
+pipeline/classified_checkpoint.json
+pipeline/classified_skipped.json
+pipeline/circle_a_step1.json
+pipeline/circle_a_step1_*.json
+pipeline/raw_expansion.json
+pipeline/raw_expansion_results.json
+pipeline/core_tweets.json
+pipeline/eqr_distribution.json
+pipeline/circles/hub_candidates.json
+pipeline/circles/hub_profiles_enriched.json
+pipeline/circles/hub_verification.json
+pipeline/circles/graph_v1.json
+pipeline/circles/unified_16_anchor_matrix.json
+pipeline/circles/*_step1.json
+pipeline/circles/chinese_ai_agent_sector_FAILED*.json
+pipeline/circles/chinese_crypto_analysis.json
+pipeline/circles/virtuals_chinese_builders.json
+pipeline/circles/xhunt_web3_media.json
+pipeline/circles/cross_circle_prep.json
+
+# Session-specific working docs (internal planning, not for the repo)
+CLAUDE.md
+methodology_v3_corrected.md
+methodology_v2_for_review.md
+*_task_plan_v2.md
+*_task_plan.md
+demo_tech_spec.md
+grok_kol_research_prompt.md
+twitter_cookies_guide.md
+seed_handles_verified.json
+
+# Client-specific strings in scoring spec (will rewrite a clean version later)
+scoring/scoring_spec.md
+
+# ============================================================
+# Demo frontend data — regenerated from Supabase via scoring/export_*.py
+# NOTE: these are kept in the repo so the static demo works out-of-the-box.
+# If you want a clean repo without bundled data, uncomment:
+# kol-intelligence-engine/src/data/kols.json
+# kol-intelligence-engine/src/data/graph.json
+# kol-intelligence-engine/src/data/agent_responses.json
+# ============================================================

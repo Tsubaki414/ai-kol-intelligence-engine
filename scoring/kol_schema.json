@@ -1,0 +1,876 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "KOL Intelligence Engine Scoring Schema",
+  "definitions": {
+    "KolRaw": {
+      "$defs": {
+        "ContactSignals": {
+          "description": "Contact channels parsed from bio / pinned tweet / external databases (Phase 1d).",
+          "properties": {
+            "email_in_bio": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Email In Bio"
+            },
+            "telegram_handle": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Telegram Handle"
+            },
+            "website": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Website"
+            },
+            "agent_contact": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Agent Contact"
+            }
+          },
+          "title": "ContactSignals",
+          "type": "object"
+        },
+        "CooperabilityHardFilter": {
+          "description": "v3 hard-filter output from Phase 1d classifier.\n\nKOLs with `is_contactable=False` or `accepts_paid_promos=False` are moved\nto `observe_only.json` and do NOT reach the scoring step. This model stores\nthe filter decision for audit/display purposes.",
+          "properties": {
+            "is_contactable": {
+              "title": "Is Contactable",
+              "type": "boolean"
+            },
+            "accepts_paid_promos": {
+              "title": "Accepts Paid Promos",
+              "type": "boolean"
+            },
+            "contact_method": {
+              "title": "Contact Method",
+              "type": "string"
+            },
+            "public_email": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Public Email"
+            },
+            "public_telegram": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Public Telegram"
+            }
+          },
+          "required": [
+            "is_contactable",
+            "accepts_paid_promos",
+            "contact_method"
+          ],
+          "title": "CooperabilityHardFilter",
+          "type": "object"
+        },
+        "NetworkStats": {
+          "description": "Phase 1c graph build output. Feeds Network Position sub-score (\u00a74.5).\n\nThresholds in scoring_spec.md \u00a74.5 are calibrated on the current 66-core-node\nsample from `pipeline/circles/graph_v1.json` (2026-04-08).",
+          "properties": {
+            "t1_mutual_count": {
+              "default": 0,
+              "title": "T1 Mutual Count",
+              "type": "integer"
+            },
+            "cross_cluster_mutual_count": {
+              "default": 0,
+              "title": "Cross Cluster Mutual Count",
+              "type": "integer"
+            },
+            "bridge_ratio": {
+              "default": 0.0,
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "title": "Bridge Ratio",
+              "type": "number"
+            },
+            "cluster_id": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Cluster Id"
+            }
+          },
+          "title": "NetworkStats",
+          "type": "object"
+        },
+        "OnchainData": {
+          "description": "On-chain data block. Feeds Layer 2 scores (\u00a75).\n\nWhen `wallet_public` is False, the entire Layer 2 is skipped (onchain_score = null).\nCurrent Phase 2 bootstrap returns null for all KOLs until Etherscan/Arkham\nintegration is built.",
+          "properties": {
+            "wallet_public": {
+              "default": false,
+              "title": "Wallet Public",
+              "type": "boolean"
+            },
+            "wallet_address": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Wallet Address"
+            },
+            "chain": {
+              "default": "ethereum",
+              "title": "Chain",
+              "type": "string"
+            },
+            "holdings": {
+              "items": {
+                "$ref": "#/$defs/TokenHolding"
+              },
+              "title": "Holdings",
+              "type": "array"
+            },
+            "protocols_used": {
+              "items": {
+                "type": "string"
+              },
+              "title": "Protocols Used",
+              "type": "array"
+            },
+            "gov_votes": {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "Gov Votes",
+              "type": "array"
+            },
+            "tx_count_30d": {
+              "default": 0,
+              "title": "Tx Count 30D",
+              "type": "integer"
+            }
+          },
+          "title": "OnchainData",
+          "type": "object"
+        },
+        "PastRateDisclosures": {
+          "description": "Rate card / pricing history used by Price Predictability sub-score (\u00a76.4).",
+          "properties": {
+            "has_public_rate_card": {
+              "default": false,
+              "title": "Has Public Rate Card",
+              "type": "boolean"
+            },
+            "inferred_from_past_promos": {
+              "default": false,
+              "title": "Inferred From Past Promos",
+              "type": "boolean"
+            },
+            "rate_card_url": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Rate Card Url"
+            }
+          },
+          "title": "PastRateDisclosures",
+          "type": "object"
+        },
+        "PostClassification": {
+          "description": "Claude Phase 1d pre-classification of one post.\n\nThis is produced by a one-shot Claude API call per KOL (batched for cost).\nScoring functions CONSUME this; they do not call Claude themselves.",
+          "properties": {
+            "content_class": {
+              "enum": [
+                "retweet",
+                "news_share",
+                "meme_casual",
+                "quote_with_commentary",
+                "original_observation",
+                "thread",
+                "original_deep_analysis",
+                "ai_generated_suspected"
+              ],
+              "title": "Content Class",
+              "type": "string"
+            },
+            "is_ai_generated_suspected": {
+              "default": false,
+              "title": "Is Ai Generated Suspected",
+              "type": "boolean"
+            },
+            "sector": {
+              "default": "other",
+              "title": "Sector",
+              "type": "string"
+            },
+            "is_ai_crypto_related": {
+              "default": false,
+              "title": "Is Ai Crypto Related",
+              "type": "boolean"
+            },
+            "originality_score_raw": {
+              "description": "Claude's 0-100 originality judgment",
+              "maximum": 100,
+              "minimum": 0,
+              "title": "Originality Score Raw",
+              "type": "integer"
+            },
+            "promo_match": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Detected sponsor phrase: \"#ad\", \"in partnership with @X\", etc.",
+              "title": "Promo Match"
+            },
+            "mentioned_tokens": {
+              "description": "Token mentions: [{\"symbol\":\"TOKEN_A\",\"sentiment\":\"bullish\"}, ...]",
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "Mentioned Tokens",
+              "type": "array"
+            }
+          },
+          "required": [
+            "content_class",
+            "originality_score_raw"
+          ],
+          "title": "PostClassification",
+          "type": "object"
+        },
+        "PostsLast30d": {
+          "description": "Aggregate counts over the KOL's last 30 days, used by Response Likelihood.",
+          "properties": {
+            "total_count": {
+              "default": 0,
+              "title": "Total Count",
+              "type": "integer"
+            },
+            "reply_count": {
+              "default": 0,
+              "title": "Reply Count",
+              "type": "integer"
+            },
+            "original_count": {
+              "default": 0,
+              "title": "Original Count",
+              "type": "integer"
+            },
+            "quote_count": {
+              "default": 0,
+              "title": "Quote Count",
+              "type": "integer"
+            }
+          },
+          "title": "PostsLast30d",
+          "type": "object"
+        },
+        "Profile": {
+          "description": "User-level profile metadata.",
+          "properties": {
+            "followers": {
+              "default": 0,
+              "title": "Followers",
+              "type": "integer"
+            },
+            "following": {
+              "default": 0,
+              "title": "Following",
+              "type": "integer"
+            },
+            "joined": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Joined"
+            },
+            "verified": {
+              "default": false,
+              "title": "Verified",
+              "type": "boolean"
+            },
+            "bio": {
+              "default": "",
+              "title": "Bio",
+              "type": "string"
+            },
+            "is_dm_open": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Is Dm Open"
+            },
+            "tier": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "Nano",
+                    "Micro",
+                    "Macro",
+                    "Mega"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Tier"
+            }
+          },
+          "title": "Profile",
+          "type": "object"
+        },
+        "PromoHistory90d": {
+          "description": "Claude's scan of last 90 days for sponsor disclosure phrases.\n\nFeeds Layer 3 Promo History sub-score (\u00a76.2).",
+          "properties": {
+            "promo_match_count": {
+              "default": 0,
+              "title": "Promo Match Count",
+              "type": "integer"
+            },
+            "promo_examples": {
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 5,
+              "title": "Promo Examples",
+              "type": "array"
+            }
+          },
+          "title": "PromoHistory90d",
+          "type": "object"
+        },
+        "PublicMetrics": {
+          "description": "Per-tweet public metrics from X API v2 /users/:id/tweets `public_metrics` field.\n\nNote: `impression_count` (view count) is unreliable in X API Basic tier\nfor non-owned accounts and is deliberately excluded. EQR uses only\nlike/reply/retweet/quote counts (see scoring_spec.md \u00a74.1).",
+          "properties": {
+            "like_count": {
+              "default": 0,
+              "title": "Like Count",
+              "type": "integer"
+            },
+            "reply_count": {
+              "default": 0,
+              "title": "Reply Count",
+              "type": "integer"
+            },
+            "retweet_count": {
+              "default": 0,
+              "title": "Retweet Count",
+              "type": "integer"
+            },
+            "quote_count": {
+              "default": 0,
+              "title": "Quote Count",
+              "type": "integer"
+            }
+          },
+          "title": "PublicMetrics",
+          "type": "object"
+        },
+        "ReferencedTweet": {
+          "description": "An entry in a tweet's `referenced_tweets` array. Used to detect tweet type.",
+          "properties": {
+            "type": {
+              "enum": [
+                "retweeted",
+                "quoted",
+                "replied_to"
+              ],
+              "title": "Type",
+              "type": "string"
+            },
+            "id": {
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "id"
+          ],
+          "title": "ReferencedTweet",
+          "type": "object"
+        },
+        "ReplyStreamSample": {
+          "description": "Sample of the last ~100 replies the KOL received on their own posts.\n\nUsed by Audience Authenticity (\u00a74.3) and by EQR's spam-reply adjustment (\u00a74.1).\nFetched in Phase 1d via `/tweets/search/recent` with `conversation_id` filter.",
+          "properties": {
+            "total_replies_sampled": {
+              "default": 0,
+              "title": "Total Replies Sampled",
+              "type": "integer"
+            },
+            "unique_repliers": {
+              "default": 0,
+              "title": "Unique Repliers",
+              "type": "integer"
+            },
+            "spam_flagged_count": {
+              "default": 0,
+              "title": "Spam Flagged Count",
+              "type": "integer"
+            }
+          },
+          "title": "ReplyStreamSample",
+          "type": "object"
+        },
+        "TokenHolding": {
+          "properties": {
+            "symbol": {
+              "title": "Symbol",
+              "type": "string"
+            },
+            "balance_usd": {
+              "title": "Balance Usd",
+              "type": "number"
+            },
+            "chain": {
+              "default": "ethereum",
+              "title": "Chain",
+              "type": "string"
+            }
+          },
+          "required": [
+            "symbol",
+            "balance_usd"
+          ],
+          "title": "TokenHolding",
+          "type": "object"
+        },
+        "Tweet": {
+          "description": "A single tweet with metrics and optional Phase 1d classification.",
+          "properties": {
+            "id": {
+              "title": "Id",
+              "type": "string"
+            },
+            "created_at": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Created At"
+            },
+            "text": {
+              "default": "",
+              "title": "Text",
+              "type": "string"
+            },
+            "lang": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Lang"
+            },
+            "referenced_tweets": {
+              "items": {
+                "$ref": "#/$defs/ReferencedTweet"
+              },
+              "title": "Referenced Tweets",
+              "type": "array"
+            },
+            "public_metrics": {
+              "$ref": "#/$defs/PublicMetrics"
+            },
+            "classification": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/PostClassification"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "title": "Tweet",
+          "type": "object"
+        }
+      },
+      "additionalProperties": true,
+      "description": "Normalized scoring input for ONE KOL.\n\nThis is the single source of truth for what the three-layer scoring system\nconsumes. See scoring/schema.md for the mapping from existing pipeline files\n(classified_kols.json, core_tweets.json, graph_v1.json) to this shape.\n\nRequired fields: handle, profile.\nEverything else is optional \u2014 the scorer returns null sub-scores when data\nis missing, with confidence flags indicating why.",
+      "properties": {
+        "handle": {
+          "description": "KOL Twitter/X handle without @ prefix",
+          "title": "Handle",
+          "type": "string"
+        },
+        "profile": {
+          "$ref": "#/$defs/Profile"
+        },
+        "contact_signals": {
+          "$ref": "#/$defs/ContactSignals"
+        },
+        "cooperability_hard_filter": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CooperabilityHardFilter"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "recent_posts": {
+          "description": "Last 20 tweets (mix of original/retweet/quote/reply); EQR uses authored subset",
+          "items": {
+            "$ref": "#/$defs/Tweet"
+          },
+          "title": "Recent Posts",
+          "type": "array"
+        },
+        "posts_last_30d": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PostsLast30d"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "reply_stream_sample": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReplyStreamSample"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "network_stats": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NetworkStats"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "promo_history_90d": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PromoHistory90d"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "past_rate_disclosures": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PastRateDisclosures"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "onchain": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OnchainData"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "campaign_history": {
+          "description": "Historical campaigns for Campaign Impact Score (empty in bootstrap)",
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Campaign History",
+          "type": "array"
+        }
+      },
+      "required": [
+        "handle",
+        "profile"
+      ],
+      "title": "KolRaw",
+      "type": "object"
+    },
+    "ScoredKol": {
+      "$defs": {
+        "ScoreTrace": {
+          "description": "Trace object for ONE sub-score. Powers the 'See calculation' UI panel.\n\nEvery scoring function returns a ScoreTrace even on failure \u2014 the `value`\nis null when uncomputable, and `notes` explains why.",
+          "properties": {
+            "value": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "0-100 sub-score, or null if uncomputable",
+              "title": "Value"
+            },
+            "formula": {
+              "description": "Human-readable formula (for UI display)",
+              "title": "Formula",
+              "type": "string"
+            },
+            "inputs": {
+              "additionalProperties": true,
+              "description": "Raw values pulled from KolRaw",
+              "title": "Inputs",
+              "type": "object"
+            },
+            "calculation": {
+              "default": "",
+              "description": "Substituted formula with actual numbers",
+              "title": "Calculation",
+              "type": "string"
+            },
+            "confidence": {
+              "enum": [
+                "high",
+                "medium",
+                "low",
+                "n/a"
+              ],
+              "title": "Confidence",
+              "type": "string"
+            },
+            "notes": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Notes"
+            }
+          },
+          "required": [
+            "formula",
+            "confidence"
+          ],
+          "title": "ScoreTrace",
+          "type": "object"
+        }
+      },
+      "description": "Output of `score_kol(kol_raw)`. Three parallel scores, never fused.\n\nIMPORTANT: There is no `overall_score` field. The UI, dashboard, and export\nlayer must show Quality + Cooperability as two adjacent main-line scores.\nSee scoring_spec.md \u00a77 for the rationale.",
+      "properties": {
+        "handle": {
+          "title": "Handle",
+          "type": "string"
+        },
+        "quality_score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quality Score"
+        },
+        "cooperability_score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cooperability Score"
+        },
+        "onchain_score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Onchain Score"
+        },
+        "quality_trace": {
+          "additionalProperties": {
+            "$ref": "#/$defs/ScoreTrace"
+          },
+          "title": "Quality Trace",
+          "type": "object"
+        },
+        "cooperability_trace": {
+          "additionalProperties": {
+            "$ref": "#/$defs/ScoreTrace"
+          },
+          "title": "Cooperability Trace",
+          "type": "object"
+        },
+        "onchain_trace": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/ScoreTrace"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Onchain Trace"
+        },
+        "quality_confidence": {
+          "default": "n/a",
+          "enum": [
+            "high",
+            "medium",
+            "low",
+            "n/a"
+          ],
+          "title": "Quality Confidence",
+          "type": "string"
+        },
+        "cooperability_confidence": {
+          "default": "n/a",
+          "enum": [
+            "high",
+            "medium",
+            "low",
+            "n/a"
+          ],
+          "title": "Cooperability Confidence",
+          "type": "string"
+        },
+        "onchain_confidence": {
+          "default": "n/a",
+          "enum": [
+            "high",
+            "medium",
+            "low",
+            "n/a"
+          ],
+          "title": "Onchain Confidence",
+          "type": "string"
+        },
+        "scored_with_version": {
+          "default": "v3_2026-04-09",
+          "title": "Scored With Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "handle"
+      ],
+      "title": "ScoredKol",
+      "type": "object"
+    }
+  }
+}

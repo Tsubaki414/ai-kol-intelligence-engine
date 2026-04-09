@@ -1,0 +1,25 @@
+# Python dependencies for the KOL pipeline + scoring system.
+# Install into a venv:
+#     python3 -m venv pipeline/.venv
+#     source pipeline/.venv/bin/activate
+#     pip install -r pipeline/requirements.txt
+
+# HTTP + env
+httpx>=0.28.0
+python-dotenv>=1.0.0
+
+# Data validation
+pydantic>=2.10.0
+
+# Claude API
+anthropic>=0.40.0
+
+# Supabase client
+supabase>=2.20.0
+
+# Graph analysis
+networkx>=3.0
+python-louvain>=0.16
+
+# Tests
+pytest>=8.0.0
