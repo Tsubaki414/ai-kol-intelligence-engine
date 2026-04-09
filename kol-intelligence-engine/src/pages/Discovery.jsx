@@ -252,16 +252,15 @@ export default function Discovery() {
                       hit a local Python backend. To run the full pipeline on your seeds, clone the repo and:
                     </div>
                     <div className="bg-bg-panel border border-border rounded p-3 font-mono text-[11px] text-text-primary whitespace-pre">
-{`# 1. Save your seeds
-echo '${parsedHandles.slice(0, 10).join("\n")}' > pipeline/my_seeds.txt
+{`# 1. Clone the repo and set credentials
+cp .env.example .env   # fill X_BEARER_TOKEN + ANTHROPIC_API_KEY
 
-# 2. Set X API credentials
-cp .env.example .env   # then fill BEARER_TOKEN
+# 2. Run the pipeline on your seeds
+python pipeline/run_custom_seeds.py \\
+  --handles ${parsedHandles.slice(0, 8).join(",")}
 
-# 3. Run the pipeline
-python pipeline/run_custom_seeds.py --input my_seeds.txt
-
-# 4. Refresh the web app — your graph appears`}
+# 3. Refresh the web app → Network Graph shows your custom graph
+# (restore original: git checkout kol-intelligence-engine/src/data/graph.json)`}
                     </div>
                     <div className="mt-3 text-[11px] text-text-muted">
                       Estimated runtime: {parsedHandles.length * 3}s · cost: ~$
