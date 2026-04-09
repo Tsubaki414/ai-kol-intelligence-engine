@@ -1,4 +1,5 @@
 import { useState } from "react";
+import DemoModeBanner from "../components/DemoModeBanner.jsx";
 
 const SAMPLE_BRIEF = {
   project: "Virtuals Protocol",
@@ -64,13 +65,13 @@ export default function BriefGenerator() {
 
   return (
     <div className="h-full overflow-y-auto">
+      <DemoModeBanner
+        feature="automated project-brief generation"
+        rationale="Clicking Generate returns a hardcoded sample — real version would stream Claude output from project URL + brand voice."
+        effort="2 engineer-days"
+      />
       <div className="border-b border-border px-6 py-4 bg-bg-panel">
-        <div className="flex items-center gap-3">
-          <h1 className="text-lg font-semibold text-text-primary">AI Brief Generator</h1>
-          <span className="px-2 py-0.5 text-[10px] font-mono rounded bg-accent-amber/15 text-accent-amber border border-accent-amber/30">
-            🎨 DEMO MODE
-          </span>
-        </div>
+        <h1 className="text-lg font-semibold text-text-primary">AI Brief Generator</h1>
         <div className="text-xs text-text-muted font-mono mt-0.5">
           项目方输入信息 → Claude 自动生成 campaign brief · talking points · KOL 组合建议
         </div>

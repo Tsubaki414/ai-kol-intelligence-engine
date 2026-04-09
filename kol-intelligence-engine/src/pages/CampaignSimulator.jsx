@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import kolsData from "../data/kols.json";
+import DemoModeBanner from "../components/DemoModeBanner.jsx";
 
 // v3 schema helper: prefer Quality Score, fall back to EQR sub-score, else 50
 function rankingScore(kol) {
@@ -83,13 +84,13 @@ export default function CampaignSimulator() {
 
   return (
     <div className="h-full overflow-y-auto">
+      <DemoModeBanner
+        feature="campaign reach / engagement / conversion simulator"
+        rationale="Estimates use Quality Score + tier heuristics. Real version would calibrate against historical Lighthouse campaign outcomes via Claude API."
+        effort="3 engineer-days"
+      />
       <div className="border-b border-border px-6 py-4 bg-bg-panel">
-        <div className="flex items-center gap-3">
-          <h1 className="text-lg font-semibold text-text-primary">Campaign Simulator</h1>
-          <span className="px-2 py-0.5 text-[10px] font-mono rounded bg-accent-amber/15 text-accent-amber border border-accent-amber/30">
-            🎨 DEMO MODE
-          </span>
-        </div>
+        <h1 className="text-lg font-semibold text-text-primary">Campaign Simulator</h1>
         <div className="text-xs text-text-muted font-mono mt-0.5">
           Select KOLs → simulate reach / engagement / conversion / cost
         </div>

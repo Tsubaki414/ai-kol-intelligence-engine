@@ -20,7 +20,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route element={<Layout />}>
-          <Route path="/" element={<Navigate to="/graph" replace />} />
+          <Route path="/" element={<Navigate to="/outreach" replace />} />
           <Route path="/dashboard"  element={<Dashboard />} />
           <Route path="/graph"      element={<NetworkGraphPage />} />
           <Route path="/discovery"  element={<Discovery />} />

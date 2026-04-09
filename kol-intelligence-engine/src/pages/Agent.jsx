@@ -109,6 +109,25 @@ export default function Agent() {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
+      {/* Live-mode warning — only rendered when the user has saved their
+          own API key, so we're actually spending their quota on each query. */}
+      {liveMode && (
+        <div className="border-b border-accent-emerald/40 bg-accent-emerald/10 px-6 py-2 flex items-center gap-3">
+          <div className="text-accent-emerald text-sm leading-none">●</div>
+          <div className="flex-1 text-[11px] font-mono text-text-secondary leading-relaxed">
+            <span className="text-accent-emerald font-semibold">LIVE MODE.</span>{" "}
+            Custom queries will spend tokens on your Anthropic account until you clear the key.
+            Preset queries still return cached responses for free.
+          </div>
+          <button
+            onClick={clearKey}
+            className="text-[10px] font-mono text-accent-rose hover:underline whitespace-nowrap"
+          >
+            clear key →
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="border-b border-border px-6 py-4 bg-bg-panel">
         <div className="flex items-center gap-3 mb-1">
