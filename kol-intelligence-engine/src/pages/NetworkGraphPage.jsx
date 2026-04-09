@@ -35,7 +35,7 @@ export default function NetworkGraphPage() {
   const [tierFilter, setTierFilter] = useState([]);
   const [showFiltersPanel, setShowFiltersPanel] = useState(false);
   const [showIsolated, setShowIsolated] = useState(false); // hide isolated nodes by default
-  const [showWatched, setShowWatched] = useState(false); // hide watched nodes by default (toggle on to explore)
+  const [showWatched, setShowWatched] = useState(true); // show watched (non-mutual) nodes by default
   const [showCelebrities, setShowCelebrities] = useState(false); // hide celebrity-flagged by default
   const [searchError, setSearchError] = useState("");
 
@@ -56,17 +56,18 @@ export default function NetworkGraphPage() {
     };
   }, []);
 
-  // Tune physics — optimized for 27-node mutual subgraph (default view)
+  // Tune physics for large graph (713 nodes)
   useEffect(() => {
     if (!fgRef.current) return;
     const fg = fgRef.current;
-    fg.d3Force("charge")?.strength(-220).distanceMax(400);
+    // Stronger repulsion so clusters don't collapse into a hairball
+    fg.d3Force("charge")?.strength(-80).distanceMax(300);
+    // Shorter links
     fg.d3Force("link")?.distance((link) => {
-      if (link.tier === 1) return 80;
-      if (link.tier === 2) return 130;
-      return 160;
+      if (link.tier === 1) return 30;
+      if (link.tier === 2) return 60;
+      return 90;
     });
-    fg.d3Force("center")?.strength(0.05);
   }, [size]);
 
   // Derive filter options from node data (only populated if classified)
@@ -323,9 +324,9 @@ export default function NetworkGraphPage() {
                   ? "bg-bg-hover border-text-secondary text-text-secondary"
                   : "bg-bg-card border-border text-text-muted"
               }`}
-              title="Watched: anchors follow them but mutual not verified — outreach targets, not network members"
+              title="Watched: anchors follow them but no mutual confirmed (one-way only)"
             >
-              ○ watched ({meta.watched_nodes || 0})
+              {showWatched ? "○" : "✕"} watched ({meta.watched_nodes || 0})
             </button>
             <button
               onClick={() => setShowCelebrities(!showCelebrities)}
@@ -467,10 +468,10 @@ export default function NetworkGraphPage() {
               linkDirectionalArrowRelPos={0.92}
               onNodeHover={setHoveredNode}
               onNodeClick={handleNodeClick}
-              cooldownTicks={200}
-              d3AlphaDecay={0.015}
-              d3VelocityDecay={0.4}
-              warmupTicks={150}
+              cooldownTicks={120}
+              d3AlphaDecay={0.02}
+              d3VelocityDecay={0.35}
+              warmupTicks={80}
             />
           )}
 
