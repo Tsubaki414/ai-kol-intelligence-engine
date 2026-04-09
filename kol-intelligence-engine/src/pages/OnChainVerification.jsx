@@ -1,5 +1,4 @@
 import { useState } from "react";
-import DemoModeBanner from "../components/DemoModeBanner.jsx";
 
 // Mock wallet data for one example KOL (demo)
 const SAMPLE = {
@@ -66,15 +65,15 @@ export default function OnChainVerification() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <DemoModeBanner
-        feature="Layer 2 on-chain verification: wallet-content alignment + activity depth + campaign impact"
-        rationale="Wallet data shown is synthetic for one example KOL. Real version integrates Etherscan / Arkham / Dune — deferred from bootstrap since <20% of KOLs have public wallets."
-        effort="1 engineer-week (blocked on on-chain reputation standards maturity)"
-      />
       <div className="border-b border-border px-6 py-4 bg-bg-panel">
-        <h1 className="text-lg font-semibold text-text-primary">On-chain Verification</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-lg font-semibold text-text-primary">On-chain Verification</h1>
+          <span className="px-2 py-0.5 text-[10px] font-mono rounded bg-accent-amber/15 text-accent-amber border border-accent-amber/30">
+            🎨 DEMO MODE
+          </span>
+        </div>
         <div className="text-xs text-text-muted font-mono mt-0.5">
-          Layer 2: Wallet-Content Alignment · Activity Depth · Campaign Impact
+          Dual-Layer Layer 2: Wallet-Content Alignment · Activity Depth · Campaign Impact
         </div>
       </div>
 

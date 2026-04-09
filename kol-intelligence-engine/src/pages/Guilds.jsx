@@ -1,5 +1,4 @@
 import { useState } from "react";
-import DemoModeBanner from "../components/DemoModeBanner.jsx";
 
 // Sample guild data — one per ground-truth circle + synthetic S-Tier example.
 const GUILDS = [
@@ -84,15 +83,15 @@ export default function Guilds() {
 
   return (
     <div className="h-full flex flex-col">
-      <DemoModeBanner
-        feature="Guild-based KOL team management (MagVerse-style but AI-matched)"
-        rationale="Guild data below is synthetic. Production would store guilds in Supabase and track real campaign participation."
-        effort="5 engineer-days"
-      />
       <div className="border-b border-border px-6 py-4 bg-bg-panel">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold text-text-primary">Guild Management</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-lg font-semibold text-text-primary">Guild Management</h1>
+              <span className="px-2 py-0.5 text-[10px] font-mono rounded bg-accent-amber/15 text-accent-amber border border-accent-amber/30">
+                🎨 DEMO MODE
+              </span>
+            </div>
             <div className="text-xs text-text-muted font-mono mt-0.5">
               KOL 组织化管理 — Guild leader 负责招募 / 质控 / 任务分配。S-Tier Guild 享独家权益。
             </div>

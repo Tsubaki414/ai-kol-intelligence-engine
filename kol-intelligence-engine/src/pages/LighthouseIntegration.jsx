@@ -1,6 +1,5 @@
 import { useState } from "react";
 import kolsData from "../data/kols.json";
-import DemoModeBanner from "../components/DemoModeBanner.jsx";
 
 // v3 three-layer schema (2026-04-09): Quality + Cooperability + Onchain run in parallel.
 // Quality and Cooperability map to Lighthouse separately — never fused.
@@ -45,13 +44,13 @@ export default function LighthouseIntegration() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <DemoModeBanner
-        feature="one-click KOL database sync to Lighthouse platform"
-        rationale="Clicking Import runs a fake 2.5s delay. Real version requires Lighthouse public API + OAuth — not yet published by Lighthouse."
-        effort="4 engineer-days (waiting on Lighthouse API)"
-      />
       <div className="border-b border-border px-6 py-4 bg-bg-panel">
-        <h1 className="text-lg font-semibold text-text-primary">Lighthouse Integration</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-lg font-semibold text-text-primary">Lighthouse Integration</h1>
+          <span className="px-2 py-0.5 text-[10px] font-mono rounded bg-accent-amber/15 text-accent-amber border border-accent-amber/30">
+            🎨 DEMO MODE
+          </span>
+        </div>
         <div className="text-xs text-text-muted font-mono mt-0.5">
           Push KOL database → app.lhdao.top · Task 2 ↔ Demo bridge
         </div>
