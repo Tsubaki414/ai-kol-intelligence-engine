@@ -184,8 +184,24 @@ CREATE INDEX IF NOT EXISTS idx_seeds_circle ON seeds(circle);
 
 -- ============================================================
 -- Row Level Security
--- Deferred: configure policies in Phase 3 when the React demo connects.
--- For now, enable RLS on all tables so we don't accidentally expose writes.
+--
+-- Philosophy: service_role (Python pipeline + build-graph Edge Function) gets
+-- full access and bypasses RLS automatically. The anon role (React demo +
+-- anyone hitting our public Supabase URL) gets READ-ONLY SELECT on the
+-- denormalized data needed to render the demo, and NOTHING ELSE.
+--
+-- Why SELECT-only and not "no access":
+--   - Mode B Edge Function already uses service_role to write, so the React
+--     demo never needs INSERT/UPDATE/DELETE from anon.
+--   - Keeping the anon SELECT available means the demo can transition from
+--     "static JSON bundled at build time" to "live query at page load"
+--     without a schema migration.
+--
+-- Why SELECT-only is safe:
+--   - All columns in `users` and `tweets` are already public-by-design (X
+--     profile data + computed scores we WANT Dov to see).
+--   - `follows` is a directed edge table built from public /following lists.
+--   - `seeds` tracks "who seeded a run" — no PII beyond the handle itself.
 -- ============================================================
 
 ALTER TABLE users   ENABLE ROW LEVEL SECURITY;
@@ -193,9 +209,20 @@ ALTER TABLE follows ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tweets  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE seeds   ENABLE ROW LEVEL SECURITY;
 
--- Temporary: allow service_role to do everything (the Python pipeline uses this role).
--- The anon role (React demo) has NO access until Phase 3 policies are added.
--- service_role bypasses RLS automatically, so no explicit policy needed for pipeline writes.
+-- Drop any pre-existing policies so this script is idempotent.
+DROP POLICY IF EXISTS "anon_read_users"   ON users;
+DROP POLICY IF EXISTS "anon_read_follows" ON follows;
+DROP POLICY IF EXISTS "anon_read_tweets"  ON tweets;
+DROP POLICY IF EXISTS "anon_read_seeds"   ON seeds;
+
+-- SELECT-only policies for the anon role.
+CREATE POLICY "anon_read_users"   ON users   FOR SELECT TO anon USING (TRUE);
+CREATE POLICY "anon_read_follows" ON follows FOR SELECT TO anon USING (TRUE);
+CREATE POLICY "anon_read_tweets"  ON tweets  FOR SELECT TO anon USING (TRUE);
+CREATE POLICY "anon_read_seeds"   ON seeds   FOR SELECT TO anon USING (TRUE);
+
+-- No INSERT/UPDATE/DELETE policy for anon → Postgres RLS default-denies.
+-- service_role continues to bypass RLS for all pipeline writes.
 
 -- ============================================================
 -- Sanity check: confirm schema ready

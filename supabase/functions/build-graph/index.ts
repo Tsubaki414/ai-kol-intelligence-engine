@@ -5,6 +5,12 @@ const HUB_MIN_ANCHORS = 2;
 const HUB_MAX_SHOW = 200;
 const MAX_FOLLOWING_PER_SEED = 1000;
 
+// Timeout + budget guards to prevent the Edge Function from hanging when a
+// user pastes 20 mega-accounts that each have 100K+ followings.
+const X_API_TIMEOUT_MS = 15_000;        // per single /users/... call
+const PER_SEED_TIMEOUT_MS = 45_000;     // full fetchFollowing budget per seed
+const TOTAL_X_API_BUDGET_MS = 180_000;  // across all uncached seeds (3 min)
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -14,18 +20,30 @@ const corsHeaders = {
 // X API helpers
 // ---------------------------------------------------------------------------
 
-async function xGet(path: string, token: string) {
-  const res = await fetch(`https://api.x.com/2${path}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (res.status === 429) {
-    const reset = res.headers.get("x-rate-limit-reset");
-    return { error: `rate_limited`, reset };
+async function xGet(path: string, token: string, timeoutMs: number = X_API_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(`https://api.x.com/2${path}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: controller.signal,
+    });
+    if (res.status === 429) {
+      const reset = res.headers.get("x-rate-limit-reset");
+      return { error: `rate_limited`, reset };
+    }
+    if (!res.ok) {
+      return { error: `http_${res.status}` };
+    }
+    return await res.json();
+  } catch (err) {
+    if ((err as Error).name === "AbortError") {
+      return { error: "x_api_timeout" };
+    }
+    return { error: `fetch_error: ${(err as Error).message}` };
+  } finally {
+    clearTimeout(timer);
   }
-  if (!res.ok) {
-    return { error: `http_${res.status}` };
-  }
-  return await res.json();
 }
 
 async function resolveHandle(handle: string, token: string) {
@@ -36,13 +54,22 @@ async function resolveHandle(handle: string, token: string) {
   return data?.data ?? null;
 }
 
-async function fetchFollowing(userId: string, token: string): Promise<string[]> {
+async function fetchFollowing(
+  userId: string,
+  token: string,
+  deadlineMs: number
+): Promise<{ handles: string[]; timedOut: boolean }> {
   const handles: string[] = [];
   let paginationToken: string | null = null;
   let pages = 0;
   const maxPages = Math.ceil(MAX_FOLLOWING_PER_SEED / 1000);
+  const seedDeadline = Math.min(Date.now() + PER_SEED_TIMEOUT_MS, deadlineMs);
 
   while (pages < maxPages) {
+    if (Date.now() > seedDeadline) {
+      return { handles, timedOut: true };
+    }
+
     const qs = new URLSearchParams({
       max_results: "1000",
       "user.fields": "public_metrics,description,name",
@@ -59,7 +86,7 @@ async function fetchFollowing(userId: string, token: string): Promise<string[]> 
     pages++;
     if (!paginationToken) break;
   }
-  return handles;
+  return { handles, timedOut: false };
 }
 
 // ---------------------------------------------------------------------------
@@ -135,27 +162,45 @@ async function saveToSupabase(
   profile: Record<string, unknown>,
   followedHandles: string[]
 ) {
-  // Upsert seed user
-  await db.from("users").upsert({
-    handle,
-    name: profile.name,
-    bio: profile.description,
-    followers_count: (profile.public_metrics as Record<string,number>)?.followers_count,
-    following_count: (profile.public_metrics as Record<string,number>)?.following_count,
-    x_id: profile.id,
-    source: "custom_seed_import",
-  }, { onConflict: "handle" });
+  // Step 1: upsert the follower user (idempotent by handle).
+  const { error: userErr } = await db.from("users").upsert(
+    {
+      handle,
+      name: profile.name,
+      bio: profile.description,
+      followers_count: (profile.public_metrics as Record<string, number>)?.followers_count,
+      following_count: (profile.public_metrics as Record<string, number>)?.following_count,
+      x_id: profile.id,
+      source: "custom_seed_import",
+    },
+    { onConflict: "handle" }
+  );
+  if (userErr) throw new Error(`users upsert: ${userErr.message}`);
 
-  // Upsert follow edges in batches
+  if (followedHandles.length === 0) return;
+
+  // Step 2: upsert follow edges in batches. All upserts use the same
+  // (follower_handle, followee_handle) conflict key so reruns are safe.
+  // We surface the first error but keep going — a batch failure leaves
+  // some edges unwritten, which is fine since the in-memory copy is
+  // used for graph construction this request; future requests will
+  // retry the missing edges via cache-miss.
   const rows = followedHandles.map((f) => ({
     follower_handle: handle,
     followee_handle: f,
     source: "custom_seed_import",
   }));
+  let firstBatchErr: string | null = null;
   for (let i = 0; i < rows.length; i += 200) {
-    await db.from("follows").upsert(rows.slice(i, i + 200), {
+    const { error } = await db.from("follows").upsert(rows.slice(i, i + 200), {
       onConflict: "follower_handle,followee_handle",
     });
+    if (error && !firstBatchErr) firstBatchErr = error.message;
+  }
+  if (firstBatchErr) {
+    // Throw at the end so the caller can log the failure but keeps the
+    // in-memory data that was successfully assembled.
+    throw new Error(`follows batch upsert: ${firstBatchErr}`);
   }
 }
 
@@ -301,20 +346,46 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { handles } = await req.json();
-    if (!Array.isArray(handles) || handles.length < 2) {
-      return new Response(JSON.stringify({ error: "Need at least 2 handles" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const body = await req.json().catch(() => ({}));
+    const rawHandles = body?.handles;
+
+    if (!Array.isArray(rawHandles)) {
+      return new Response(
+        JSON.stringify({ error: "Request body must be { handles: string[] }" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    const cleanHandles: string[] = [...new Set(
-      handles.map((h: string) => h.trim().replace(/^@/, "").toLowerCase())
-        .filter((h: string) => /^[a-z0-9_]{1,15}$/.test(h))
-    )].slice(0, 20);
+    // Normalize → validate → dedupe, in that order. Previous order was
+    // dedupe-then-count which gave misleading errors when a user pasted
+    // @kuigas three times and got "need more handles" despite providing 3.
+    const normalized = rawHandles
+      .map((h: unknown) => String(h ?? "").trim().replace(/^@/, "").toLowerCase());
+    const invalid = normalized.filter((h) => h && !/^[a-z0-9_]{1,15}$/.test(h));
+    const valid = normalized.filter((h) => /^[a-z0-9_]{1,15}$/.test(h));
+    const cleanHandles: string[] = [...new Set(valid)].slice(0, 20);
+
+    if (cleanHandles.length < 2) {
+      return new Response(
+        JSON.stringify({
+          error:
+            cleanHandles.length === 0
+              ? "No valid handles provided"
+              : `Need at least 2 unique handles (got ${cleanHandles.length})`,
+          invalid_handles: invalid.slice(0, 5),
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const db = getSupabase();
-    const xToken = Deno.env.get("X_BEARER_TOKEN")!;
+    const xToken = Deno.env.get("X_BEARER_TOKEN");
+    if (!xToken) {
+      return new Response(
+        JSON.stringify({ error: "X_BEARER_TOKEN not configured on the server" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // 1. Load cached following from Supabase
     const cached = await loadCachedFollowing(db, cleanHandles);
@@ -322,27 +393,75 @@ Deno.serve(async (req) => {
 
     const progress: string[] = [];
     if (Object.keys(cached).length > 0) {
-      progress.push(`✓ ${Object.keys(cached).length} seeds loaded from cache`);
+      progress.push(`✓ ${Object.keys(cached).length} seeds loaded from cache (free)`);
+    }
+    if (invalid.length > 0) {
+      progress.push(`⚠ ${invalid.length} invalid handle(s) skipped`);
     }
 
-    // 2. Fetch missing seeds from X API
+    // 2. Fetch missing seeds from X API — under a global deadline so a
+    // burst of mega-accounts can't hang the function past Supabase's
+    // 150s Edge Function timeout.
     const apiFollowings: Record<string, Set<string>> = {};
     const apiProfiles: Record<string, Record<string, unknown>> = {};
+    const xApiDeadline = Date.now() + TOTAL_X_API_BUDGET_MS;
+    let budgetExhausted = false;
 
     for (const handle of missing) {
+      if (Date.now() > xApiDeadline) {
+        budgetExhausted = true;
+        progress.push(
+          `✗ X API budget exhausted — skipping @${handle} and ${missing.length - missing.indexOf(handle) - 1} more`
+        );
+        break;
+      }
+
       progress.push(`→ Fetching @${handle} from X API…`);
       const user = await resolveHandle(handle, xToken);
-      if (!user) { progress.push(`✗ @${handle} not found`); continue; }
+      if (!user) {
+        progress.push(`✗ @${handle} not found`);
+        continue;
+      }
 
-      const followedHandles = await fetchFollowing(user.id, xToken);
+      const { handles: followedHandles, timedOut } = await fetchFollowing(
+        user.id,
+        xToken,
+        xApiDeadline
+      );
+      if (followedHandles.length === 0 && timedOut) {
+        progress.push(`✗ @${handle}: X API timeout`);
+        continue;
+      }
       apiFollowings[handle] = new Set(followedHandles);
       apiProfiles[handle] = user;
-      await saveToSupabase(db, handle, user, followedHandles);
-      progress.push(`✓ @${handle}: ${followedHandles.length} followings fetched & cached`);
+      // saveToSupabase is best-effort — a write failure here must not
+      // crash the whole request since we already have the data in memory.
+      try {
+        await saveToSupabase(db, handle, user, followedHandles);
+      } catch (err) {
+        progress.push(
+          `⚠ @${handle}: fetched ${followedHandles.length} but cache write failed (${(err as Error).message})`
+        );
+      }
+      const suffix = timedOut ? " (partial — timeout)" : "";
+      progress.push(
+        `✓ @${handle}: ${followedHandles.length} followings fetched & cached${suffix}`
+      );
     }
 
     const allFollowings: Record<string, Set<string>> = { ...cached, ...apiFollowings };
     const availableSeeds = cleanHandles.filter((h) => allFollowings[h]);
+
+    if (availableSeeds.length < 2) {
+      return new Response(
+        JSON.stringify({
+          error: `Only ${availableSeeds.length} seed(s) could be resolved — need at least 2 to build a graph`,
+          progress,
+          budget_exhausted: budgetExhausted,
+        }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // 3. Hub candidates
     const hubCounts: Record<string, number> = {};
@@ -370,12 +489,18 @@ Deno.serve(async (req) => {
     const graph = buildGraph(availableSeeds, seedProfiles, allFollowings, mutualPairs, confirmedHubs, filteredHubs);
 
     return new Response(
-      JSON.stringify({ graph, progress }),
+      JSON.stringify({
+        graph,
+        progress,
+        budget_exhausted: budgetExhausted,
+        seeds_requested: cleanHandles.length,
+        seeds_resolved: availableSeeds.length,
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
     return new Response(
-      JSON.stringify({ error: String(err) }),
+      JSON.stringify({ error: `Edge Function error: ${(err as Error).message}` }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

@@ -31,6 +31,12 @@ export default function Discovery() {
     setProgress([]);
     setImporting(true);
 
+    // Client-side timeout mirrors the Edge Function's 3-min total budget
+    // plus a small buffer. If the function hangs we at least get a useful
+    // error instead of the browser spinning forever.
+    const controller = new AbortController();
+    const clientTimeout = setTimeout(() => controller.abort(), 200_000);
+
     try {
       setProgress(["Connecting to pipeline…"]);
 
@@ -38,22 +44,39 @@ export default function Discovery() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ handles }),
+        signal: controller.signal,
       });
 
       const data = await res.json();
 
       if (!res.ok || data.error) {
-        setResult({ error: data.error || `HTTP ${res.status}` });
-        setProgress((p) => [...p, `✗ Error: ${data.error || res.status}`]);
+        // Preserve the progress log even on error so the user can see
+        // how far the pipeline got before it failed.
+        if (data.progress) setProgress(data.progress);
+        setResult({
+          error: data.error || `HTTP ${res.status}`,
+          budgetExhausted: data.budget_exhausted,
+          invalidHandles: data.invalid_handles,
+        });
         return;
       }
 
       setProgress(data.progress ?? []);
-      setResult({ graph: data.graph });
+      setResult({
+        graph: data.graph,
+        budgetExhausted: data.budget_exhausted,
+        seedsRequested: data.seeds_requested,
+        seedsResolved: data.seeds_resolved,
+      });
     } catch (err) {
-      setResult({ error: String(err) });
-      setProgress((p) => [...p, `✗ ${err}`]);
+      const msg =
+        err.name === "AbortError"
+          ? "Pipeline timed out after ~3 min. Try fewer seeds or smaller accounts."
+          : String(err);
+      setResult({ error: msg });
+      setProgress((p) => [...p, `✗ ${msg}`]);
     } finally {
+      clearTimeout(clientTimeout);
       setImporting(false);
     }
   };
@@ -240,9 +263,16 @@ export default function Discovery() {
                 <div className="flex items-start gap-3">
                   <div className="text-accent-emerald text-xl">✓</div>
                   <div className="flex-1">
-                    <div className="text-sm font-semibold text-accent-emerald mb-3">
+                    <div className="text-sm font-semibold text-accent-emerald mb-1">
                       Graph built — {result.graph.metadata.total_nodes} nodes · {result.graph.metadata.total_edges} edges
                     </div>
+                    {result.seedsResolved != null && result.seedsRequested != null && (
+                      <div className="text-[11px] font-mono text-text-muted mb-3">
+                        Resolved {result.seedsResolved}/{result.seedsRequested} seeds
+                        {result.budgetExhausted && " · X API budget exhausted (partial run)"}
+                      </div>
+                    )}
+                    {result.seedsResolved == null && <div className="mb-3" />}
                     <div className="grid grid-cols-3 gap-2 text-[11px] font-mono mb-4">
                       <div className="bg-bg-panel rounded p-2">
                         <div className="text-text-muted">Mutual (T1)</div>
