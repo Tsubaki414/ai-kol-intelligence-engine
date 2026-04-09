@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import ForceGraph2D from "react-force-graph-2d";
-import graphData from "../data/graph.json";
+import defaultGraphData from "../data/graph.json";
 
 // Cluster color palette (one per Louvain cluster)
 const CLUSTER_COLORS = [
@@ -23,6 +23,10 @@ const TIER_STYLE = {
 };
 
 export default function NetworkGraphPage() {
+  const location = useLocation();
+  const graphData = location.state?.customGraph ?? defaultGraphData;
+  const isCustom = !!location.state?.customGraph;
+
   const fgRef = useRef(null);
   const containerRef = useRef(null);
   const [hoveredNode, setHoveredNode] = useState(null);
@@ -392,6 +396,16 @@ export default function NetworkGraphPage() {
             </div>
           )}
         </div>
+
+        {/* Custom graph banner */}
+        {isCustom && (
+          <div className="px-6 py-2 bg-accent-emerald/10 border-b border-accent-emerald/30 text-xs font-mono text-accent-emerald flex items-center justify-between">
+            <span>⭐ Showing your custom seed graph · {graphData.metadata.total_nodes} nodes · {graphData.metadata.edge_breakdown.tier_1_mutual} mutual edges</span>
+            <Link to="/graph" className="text-text-muted hover:text-text-primary underline">
+              ← back to main graph
+            </Link>
+          </div>
+        )}
 
         {/* Graph canvas */}
         <div
