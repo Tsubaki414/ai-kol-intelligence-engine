@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import graphData from "../data/graph.json";
+import graphMeta from "../data/graph_meta.json";
 
 const EDGE_FUNCTION_URL =
   "https://jsnbkgdivqwfwlqvbotq.supabase.co/functions/v1/build-graph";
@@ -147,12 +147,12 @@ export default function Discovery() {
             <div className="bg-bg-card border border-border rounded-lg p-4">
               <h3 className="text-sm font-semibold text-text-primary mb-3">Current graph output</h3>
               <div className="grid grid-cols-3 gap-3 text-xs font-mono">
-                <StatBlock label="Mutual members" value={graphData.metadata.mutual_members || 16} sub="✅ T1 mutual confirmed (the real network)" />
-                <StatBlock label="Watched" value={(graphData.metadata.watched_nodes || 0).toLocaleString()} sub="◯ followed by anchors, mutual not verified" />
-                <StatBlock label="Celebrity-filtered" value={graphData.metadata.celebrity_filtered || 0} sub="✕ ≥5× median anchor followers" />
-                <StatBlock label="T1 mutual edges" value={graphData.metadata.edge_breakdown.tier_1_mutual} sub="Ground truth between anchors" />
-                <StatBlock label="Real clusters" value={graphData.metadata.connected_clusters || graphData.metadata.clusters_found} sub="Louvain on mutual subgraph only" />
-                <StatBlock label="API cost" value={`$${graphData.metadata.input_data.cost_usd_total}`} sub={`${graphData.metadata.input_data.total_raw_following_records_analyzed.toLocaleString()} follow records analyzed`} />
+                <StatBlock label="Mutual members" value={graphMeta.mutual_members} sub="✅ T1 mutual confirmed (the real network)" />
+                <StatBlock label="Watched" value={(graphMeta.watched_nodes || 0).toLocaleString()} sub="◯ followed by anchors, mutual not verified" />
+                <StatBlock label="Celebrity-filtered" value={graphMeta.celebrity_filtered || 0} sub="✕ ≥5× median anchor followers" />
+                <StatBlock label="T1 mutual edges" value={graphMeta.tier_1_mutual_edges} sub="Ground truth between anchors" />
+                <StatBlock label="Real clusters" value={graphMeta.connected_clusters || graphMeta.clusters_found} sub="Louvain on mutual subgraph only" />
+                <StatBlock label="API cost" value={`$${graphMeta.cost_usd_total}`} sub={`${(graphMeta.total_raw_following_records_analyzed || 0).toLocaleString()} follow records analyzed`} />
               </div>
             </div>
           </>

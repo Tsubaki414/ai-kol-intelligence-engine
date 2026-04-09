@@ -22,10 +22,44 @@ const TIER_STYLE = {
   3: { color: "rgba(100, 116, 139, 0.22)", width: 0.6, dash: [2, 3], label: "Inferred co-follow" },
 };
 
+// Persist Mode B custom graph in sessionStorage so a browser refresh
+// doesn't drop the user back to the default graph (location.state is
+// cleared on reload). Cleared via the "← back to main graph" link.
+const CUSTOM_GRAPH_KEY = "kol_engine_custom_graph";
+
+function readPersistedCustom() {
+  try {
+    const raw = sessionStorage.getItem(CUSTOM_GRAPH_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function NetworkGraphPage() {
   const location = useLocation();
-  const graphData = location.state?.customGraph ?? defaultGraphData;
-  const isCustom = !!location.state?.customGraph;
+  // Priority: 1) fresh navigation from Discovery (location.state)
+  //           2) sessionStorage cache (survives refresh)
+  //           3) default bundled graph
+  const incomingCustom = location.state?.customGraph ?? null;
+  if (incomingCustom) {
+    try {
+      sessionStorage.setItem(CUSTOM_GRAPH_KEY, JSON.stringify(incomingCustom));
+    } catch {
+      /* sessionStorage may be full or disabled — fall through */
+    }
+  }
+  const persistedCustom = incomingCustom ? null : readPersistedCustom();
+  const graphData = incomingCustom ?? persistedCustom ?? defaultGraphData;
+  const isCustom = !!(incomingCustom || persistedCustom);
+
+  const clearCustomGraph = () => {
+    try {
+      sessionStorage.removeItem(CUSTOM_GRAPH_KEY);
+    } catch {
+      /* noop */
+    }
+  };
 
   const fgRef = useRef(null);
   const containerRef = useRef(null);
@@ -400,10 +434,16 @@ export default function NetworkGraphPage() {
         {/* Custom graph banner */}
         {isCustom && (
           <div className="px-6 py-2 bg-accent-emerald/10 border-b border-accent-emerald/30 text-xs font-mono text-accent-emerald flex items-center justify-between">
-            <span>⭐ Showing your custom seed graph · {graphData.metadata.total_nodes} nodes · {graphData.metadata.edge_breakdown.tier_1_mutual} mutual edges</span>
-            <Link to="/graph" className="text-text-muted hover:text-text-primary underline">
+            <span>Showing your custom seed graph · {graphData.metadata.total_nodes} nodes · {graphData.metadata.edge_breakdown?.tier_1_mutual ?? 0} mutual edges</span>
+            <button
+              onClick={() => {
+                clearCustomGraph();
+                window.location.assign("/graph");
+              }}
+              className="text-text-muted hover:text-text-primary underline bg-transparent border-0 cursor-pointer font-mono text-xs"
+            >
               ← back to main graph
-            </Link>
+            </button>
           </div>
         )}
 

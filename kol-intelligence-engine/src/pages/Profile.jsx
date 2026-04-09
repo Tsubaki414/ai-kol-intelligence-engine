@@ -171,13 +171,19 @@ export default function Profile() {
   const t1Neighbors = neighbors.filter((n) => n.tier === 1);
   const t2Neighbors = neighbors.filter((n) => n.tier === 2);
 
-  // Quality radar: 5 Layer 1 sub-scores (treat null as 0 for display)
-  const qualityRadarData = Object.keys(QUALITY_LABELS).map((k) => ({
-    dimension: QUALITY_LABELS[k],
-    score: getTraceValue(kol, "quality", k) ?? 0,
-    isNull: getTraceValue(kol, "quality", k) == null,
-    fullMark: 100,
-  }));
+  // Quality radar: 5 Layer 1 sub-scores. Null sub-scores render as a faint
+  // dashed outline at 0 (so the dimension is still visible) instead of pulling
+  // the polygon to the center as if the KOL legitimately scored zero.
+  const qualityRadarData = Object.keys(QUALITY_LABELS).map((k) => {
+    const v = getTraceValue(kol, "quality", k);
+    return {
+      dimension: QUALITY_LABELS[k],
+      score: v ?? 0,
+      isNull: v == null,
+      fullMark: 100,
+    };
+  });
+  const nullSubScoreCount = qualityRadarData.filter((d) => d.isNull).length;
   // Cooperability bars: 3 Layer 3 sub-scores
   const coopBreakdown = Object.keys(COOP_LABELS).map((k) => ({
     key: k,
@@ -347,7 +353,7 @@ export default function Profile() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Radar */}
-            <div className="h-64">
+            <div className="h-64 relative">
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart data={qualityRadarData}>
                   <PolarGrid stroke="#2A3040" />
@@ -374,6 +380,11 @@ export default function Profile() {
                   />
                 </RadarChart>
               </ResponsiveContainer>
+              {nullSubScoreCount > 0 && (
+                <div className="absolute bottom-1 left-1 right-1 text-center text-[9px] font-mono text-text-muted italic">
+                  {nullSubScoreCount}/5 sub-score{nullSubScoreCount === 1 ? "" : "s"} unavailable — drawn at zero
+                </div>
+              )}
             </div>
 
             {/* Breakdown table */}

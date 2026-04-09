@@ -39,12 +39,24 @@ export default function ExportPage() {
         "application/json"
       );
     } else {
+      // v3 three-layer schema (2026-04-09): Quality + Cooperability + Onchain (parallel, never fused)
+      const traceVal = (k, layer, sub) =>
+        k.score_traces?.[layer]?.[sub]?.value ?? "";
       const headers = [
         "handle", "name", "bio", "type", "sector", "tier", "language", "region",
-        "circles", "followers", "overall_score", "view_velocity", "content_originality",
-        "audience_authenticity", "sector_relevance", "growth_trend",
-        "pagerank", "betweenness", "is_bridge", "in_graph", "is_contactable",
-        "contact_method", "public_email", "estimated_price_tier", "outreach_angle", "x_url",
+        "circles", "followers",
+        // Layer 1 — Quality
+        "quality_score", "quality_confidence",
+        "engagement_quality_ratio", "content_originality", "audience_authenticity",
+        "sector_relevance", "network_position",
+        // Layer 3 — Cooperability
+        "cooperability_score", "cooperability_confidence",
+        "contact_signal_strength", "promo_willingness", "accessibility",
+        // Network
+        "pagerank", "betweenness", "t1_mutual_count", "is_bridge", "is_mutual_member", "in_graph",
+        // Outreach
+        "is_contactable", "contact_method", "public_email", "public_telegram",
+        "estimated_price_tier", "outreach_angle", "x_url",
       ];
       const rows = filtered.map((k) => [
         k.handle || "@" + k.id,
@@ -57,19 +69,32 @@ export default function ExportPage() {
         k.region,
         (k.circles || []).join("+"),
         k.followers_count,
-        k.overall_score,
-        k.scores?.view_velocity,
-        k.scores?.content_originality,
-        k.scores?.audience_authenticity,
-        k.scores?.sector_relevance,
-        k.scores?.growth_trend,
+        // Layer 1 — Quality
+        k.quality_score,
+        k.quality_confidence,
+        traceVal(k, "quality", "engagement_quality_ratio"),
+        traceVal(k, "quality", "content_originality"),
+        traceVal(k, "quality", "audience_authenticity"),
+        traceVal(k, "quality", "sector_relevance"),
+        traceVal(k, "quality", "network_position"),
+        // Layer 3 — Cooperability
+        k.cooperability_score,
+        k.cooperability_confidence,
+        traceVal(k, "cooperability", "contact_signal_strength"),
+        traceVal(k, "cooperability", "promo_willingness"),
+        traceVal(k, "cooperability", "accessibility"),
+        // Network
         k.pagerank,
         k.betweenness,
+        k.t1_mutual_count,
         k.is_bridge ? "yes" : "",
+        k.is_mutual_member ? "yes" : "",
         k.in_graph ? "yes" : "",
+        // Outreach
         k.cooperability?.is_contactable ? "yes" : "",
         k.cooperability?.contact_method,
         k.cooperability?.public_email,
+        k.cooperability?.public_telegram,
         k.estimated_price_tier,
         k.outreach_angle,
         k.x_url || `https://x.com/${k.id}`,

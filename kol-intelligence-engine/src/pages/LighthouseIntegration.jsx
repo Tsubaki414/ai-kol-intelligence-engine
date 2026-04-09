@@ -1,17 +1,21 @@
 import { useState } from "react";
 import kolsData from "../data/kols.json";
 
+// v3 three-layer schema (2026-04-09): Quality + Cooperability + Onchain run in parallel.
+// Quality and Cooperability map to Lighthouse separately — never fused.
 const FIELD_MAPPING = [
-  { ours: "id", lighthouse: "handle", type: "primary_key" },
+  { ours: "handle", lighthouse: "handle", type: "primary_key" },
   { ours: "name", lighthouse: "display_name", type: "string" },
   { ours: "sector", lighthouse: "category", type: "enum" },
   { ours: "tier", lighthouse: "tier_level", type: "enum" },
   { ours: "language", lighthouse: "primary_language", type: "enum" },
   { ours: "region", lighthouse: "region", type: "enum" },
   { ours: "followers_count", lighthouse: "follower_count", type: "integer" },
-  { ours: "overall_score", lighthouse: "quality_score", type: "float" },
-  { ours: "scores.view_velocity", lighthouse: "engagement_score", type: "float" },
-  { ours: "scores.audience_authenticity", lighthouse: "authenticity_score", type: "float" },
+  { ours: "quality_score", lighthouse: "quality_score", type: "float (0-100)" },
+  { ours: "score_traces.quality.engagement_quality_ratio.value", lighthouse: "engagement_score", type: "float" },
+  { ours: "score_traces.quality.audience_authenticity.value", lighthouse: "authenticity_score", type: "float" },
+  { ours: "score_traces.quality.network_position.value", lighthouse: "network_score", type: "float" },
+  { ours: "cooperability_score", lighthouse: "cooperability_score", type: "float (0-100)" },
   { ours: "cooperability.is_contactable", lighthouse: "is_onboardable", type: "boolean" },
   { ours: "cooperability.contact_method", lighthouse: "preferred_channel", type: "enum" },
   { ours: "outreach_angle", lighthouse: "custom_pitch", type: "text" },

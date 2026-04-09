@@ -1,17 +1,23 @@
 import { useState, useMemo } from "react";
 import kolsData from "../data/kols.json";
 
-// Deterministic pseudo-random from handle for stable "estimates"
+// v3 schema helper: prefer Quality Score, fall back to EQR sub-score, else 50
+function rankingScore(kol) {
+  if (kol.quality_score != null) return kol.quality_score;
+  const eqr = kol.score_traces?.quality?.engagement_quality_ratio?.value;
+  return eqr != null ? eqr : 50;
+}
+
+// Deterministic estimate from quality score (proxy for engagement strength)
 function seededReach(kol) {
   const f = kol.followers_count || 1000;
   // simplified: reach = followers * engagement rate * amplification
-  const er =
-    ((kol.scores?.view_velocity || 50) / 100) * 0.06 + 0.015; // 1.5-7.5% engagement range
+  const er = (rankingScore(kol) / 100) * 0.06 + 0.015; // 1.5-7.5% engagement range
   return Math.round(f * er * 1.35); // 1.35x amplification from RTs
 }
 
 function seededConversion(kol, baseRate = 0.025) {
-  const quality = (kol.overall_score || 50) / 100;
+  const quality = rankingScore(kol) / 100;
   return Math.round(seededReach(kol) * baseRate * (0.6 + quality * 0.8));
 }
 
@@ -22,14 +28,19 @@ export default function CampaignSimulator() {
   const [tab, setTab] = useState("selection");
   const [budget, setBudget] = useState(10000);
 
-  // Top 25 KOLs by score, in graph preferred
+  // Top 30 KOLs: prefer KOLs with computable Quality Score; fall back to
+  // followers + tier so the page is never empty even when tweet coverage is sparse.
   const topKols = useMemo(() => {
-    return [...kolsData.kols]
-      .filter((k) => k.overall_score != null)
+    const withQ = kolsData.kols.filter((k) => k.quality_score != null);
+    const pool = withQ.length >= 30 ? withQ : kolsData.kols;
+    return [...pool]
       .sort((a, b) => {
-        // In-graph first, then score
+        // In-graph first, then quality score, then followers
         if (a.in_graph !== b.in_graph) return b.in_graph - a.in_graph;
-        return (b.overall_score || 0) - (a.overall_score || 0);
+        const qa = a.quality_score ?? -1;
+        const qb = b.quality_score ?? -1;
+        if (qa !== qb) return qb - qa;
+        return (b.followers_count || 0) - (a.followers_count || 0);
       })
       .slice(0, 30);
   }, []);
@@ -50,10 +61,7 @@ export default function CampaignSimulator() {
     const engagementRate =
       selected.length > 0
         ? (
-            (selected.reduce(
-              (s, k) => s + (k.scores?.view_velocity || 0),
-              0
-            ) /
+            (selected.reduce((s, k) => s + rankingScore(k), 0) /
               selected.length) *
             0.05
           ).toFixed(2)
@@ -129,7 +137,7 @@ export default function CampaignSimulator() {
                         @{k.id}
                       </div>
                       <div className="text-[10px] font-mono text-accent-emerald">
-                        {k.overall_score}
+                        {k.quality_score != null ? `Q ${k.quality_score}` : "—"}
                       </div>
                     </div>
                     <div className="text-[11px] text-text-muted truncate mt-0.5">
@@ -236,9 +244,9 @@ export default function CampaignSimulator() {
                     Confidence
                   </h3>
                   <div className="text-xs text-text-secondary leading-relaxed">
-                    Estimates use Dual-Layer scores + follower count + tier baselines. Confidence
-                    interval: ±25%. Production version would calibrate on historical campaign
-                    outcomes via Claude API analysis of past Lighthouse campaigns.
+                    Estimates use Layer 1 Quality Score (or EQR sub-score fallback) + follower count +
+                    tier baselines. Confidence interval: ±25%. Production version would calibrate on
+                    historical campaign outcomes via Claude API analysis of past Lighthouse campaigns.
                   </div>
                 </div>
               </div>

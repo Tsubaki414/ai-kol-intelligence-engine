@@ -104,3 +104,4 @@ scoring/scoring_spec.md
 # kol-intelligence-engine/src/data/graph.json
 # kol-intelligence-engine/src/data/agent_responses.json
 # ============================================================
+supabase/.temp/
