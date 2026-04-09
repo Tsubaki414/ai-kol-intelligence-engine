@@ -335,11 +335,12 @@ export default function Dashboard() {
             />
             <StatCard label="✕ Celeb" value={stats.celebFiltered} accent="rose" />
             <StatCard
-              label={`Avg Q (${stats.qualityScoredCount})`}
-              value={stats.avgQuality}
+              label={`Quality Score`}
+              value={`${stats.avgQuality} avg`}
+              sub={`${stats.qualityScoredCount}/${stats.total} with tweets`}
               accent="emerald"
             />
-            <StatCard label="Avg C" value={stats.avgCoop} accent="blue" />
+            <StatCard label="Avg Coop" value={stats.avgCoop} sub="680/680" accent="blue" />
           </div>
         </div>
 
@@ -570,7 +571,7 @@ export default function Dashboard() {
   );
 }
 
-function StatCard({ label, value, accent }) {
+function StatCard({ label, value, sub, accent }) {
   const accentColors = {
     emerald: "text-accent-emerald",
     blue: "text-accent-blue",
@@ -589,6 +590,9 @@ function StatCard({ label, value, accent }) {
       >
         {value}
       </div>
+      {sub && (
+        <div className="text-[9px] text-text-muted mt-0.5">{sub}</div>
+      )}
     </div>
   );
 }

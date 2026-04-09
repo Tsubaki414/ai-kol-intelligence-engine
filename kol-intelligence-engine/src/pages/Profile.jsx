@@ -245,15 +245,15 @@ export default function Profile() {
           {/* Three parallel scores — never fused into a single "overall" */}
           {anyScoreAvailable && (
             <div className="flex gap-4 flex-shrink-0">
-              <div className="text-right">
+              <div className="text-right" title={kol.quality_score == null ? "Quality score requires tweet analysis. Run Import Your Own Seeds to trigger analysis for this handle." : undefined}>
                 <div className="text-[10px] uppercase tracking-widest text-text-muted font-mono">
                   Quality
                 </div>
-                <div className="text-3xl font-semibold text-accent-emerald font-mono">
+                <div className={`text-3xl font-semibold font-mono ${kol.quality_score != null ? "text-accent-emerald" : "text-text-muted"}`}>
                   {kol.quality_score != null ? kol.quality_score : "—"}
                 </div>
                 <div className="text-[10px] text-text-muted font-mono">
-                  {kol.quality_confidence || "n/a"}
+                  {kol.quality_score != null ? (kol.quality_confidence || "n/a") : "needs tweets"}
                 </div>
               </div>
               <div className="text-right">
@@ -565,7 +565,7 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Network connections — only meaningful for mutual members (16 anchors) */}
+      {/* Network connections — only meaningful for mutual members */}
       {kol.is_mutual_member && (t1Neighbors.length > 0 || t2Neighbors.length > 0) && (
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-bg-card border border-border rounded-lg p-4">
@@ -651,7 +651,7 @@ export default function Profile() {
             ) : (
               <>
                 This KOL is classified and scored from their profile, but no anchor in
-                our 16-anchor seed set follows them. They can still be contacted directly.
+                our seed set follows them. They can still be contacted directly.
                 Paste their handle into{" "}
                 <Link to="/discovery" className="text-accent-blue hover:underline">
                   Discovery → Mode B

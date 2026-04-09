@@ -317,7 +317,7 @@ export default function NetworkGraphPage() {
             </span>
             <span
               className="px-2 py-1 rounded border bg-accent-emerald/15 border-accent-emerald text-accent-emerald"
-              title="Mutual-confirmed network members (16 anchors, T1+T2a edges) — always shown"
+              title="Mutual-confirmed network members (T1+T2a edges) — always shown"
             >
               ● mutual ({meta.mutual_members || 16})
             </span>
