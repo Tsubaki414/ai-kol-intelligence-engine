@@ -280,7 +280,7 @@ python pipeline/run_custom_seeds.py \\
                   <span className="text-accent-blue">1.</span> Resolve 10 handle IDs — 5s, ~$0.10
                 </li>
                 <li>
-                  <span className="text-accent-blue">2.</span> Fetch /following (10 × up to 1000) — 30s, ~$80
+                  <span className="text-accent-blue">2.</span> Fetch /following (10 seeds × avg 300 followings) — 30s, ~$26
                 </li>
                 <li>
                   <span className="text-accent-blue">3.</span> Compute mutual matrix (45 pairs) — 1s, free
