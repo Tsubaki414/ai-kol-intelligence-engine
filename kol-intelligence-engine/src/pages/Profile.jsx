@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   Radar,
@@ -10,6 +10,7 @@ import {
 } from "recharts";
 import kolsData from "../data/kols.json";
 import graphData from "../data/graph.json";
+import { fetchRecentTweets } from "../lib/supabase.js";
 
 // Layer 1 (Quality) sub-scores per scoring_spec v3 2026-04-09
 const QUALITY_LABELS = {
@@ -48,6 +49,36 @@ export default function Profile() {
   const [showScoreBreakdown, setShowScoreBreakdown] = useState(false);
   const [listSearch, setListSearch] = useState("");
   const [listLimit, setListLimit] = useState(48);
+  const [tweets, setTweets] = useState([]);
+  const [tweetsStatus, setTweetsStatus] = useState("idle"); // idle | loading | ok | error | empty
+  const [tweetsError, setTweetsError] = useState(null);
+
+  // Live-fetch recent cached tweets from Supabase when viewing a single KOL.
+  // Read-only, anon RLS policy gates access to the `tweets` table.
+  useEffect(() => {
+    if (!id) {
+      setTweets([]);
+      setTweetsStatus("idle");
+      return;
+    }
+    let cancelled = false;
+    setTweetsStatus("loading");
+    setTweetsError(null);
+    fetchRecentTweets(id, 10)
+      .then((rows) => {
+        if (cancelled) return;
+        setTweets(rows);
+        setTweetsStatus(rows.length === 0 ? "empty" : "ok");
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setTweetsError(err.message || String(err));
+        setTweetsStatus("error");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
   // --- List view ---
   if (!id) {
@@ -575,6 +606,80 @@ export default function Profile() {
           </div>
         </div>
       )}
+
+      {/* Recent tweets — live-fetched from Supabase tweets cache */}
+      <div className="mt-4 bg-bg-card border border-border rounded-lg p-5">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xs font-mono text-accent-blue uppercase tracking-widest">
+            Recent cached tweets
+          </h3>
+          <div className="text-[10px] font-mono text-text-muted">
+            live from Supabase · tweets table
+          </div>
+        </div>
+        {tweetsStatus === "loading" && (
+          <div className="text-[11px] font-mono text-text-muted animate-pulse">
+            Loading tweets…
+          </div>
+        )}
+        {tweetsStatus === "error" && (
+          <div className="text-[11px] font-mono text-accent-rose">
+            Failed to load tweets: {tweetsError}
+          </div>
+        )}
+        {tweetsStatus === "empty" && (
+          <div className="text-[11px] font-mono text-text-muted">
+            No cached tweets for @{id} yet. Run the Phase 1d classifier to fetch and
+            analyze their last 20 posts.
+          </div>
+        )}
+        {tweetsStatus === "ok" && (
+          <div className="space-y-3">
+            {tweets.map((t) => {
+              const pm = t.public_metrics || {};
+              const cls = t.classification || null;
+              return (
+                <div
+                  key={t.tweet_id}
+                  className="border-l-2 border-border pl-3 py-1"
+                >
+                  <div className="text-[12px] text-text-primary leading-relaxed whitespace-pre-wrap break-words">
+                    {t.text}
+                  </div>
+                  <div className="flex items-center gap-3 mt-1.5 text-[10px] font-mono text-text-muted flex-wrap">
+                    <span>
+                      {t.created_at
+                        ? new Date(t.created_at).toLocaleDateString()
+                        : "—"}
+                    </span>
+                    <span>· {t.lang || "??"}</span>
+                    {t.tweet_type && <span>· {t.tweet_type}</span>}
+                    <span className="text-accent-blue">
+                      ♥ {pm.like_count ?? 0}
+                    </span>
+                    <span className="text-accent-emerald">
+                      ↻ {pm.retweet_count ?? 0}
+                    </span>
+                    <span className="text-accent-amber">
+                      💬 {pm.reply_count ?? 0}
+                    </span>
+                    {cls?.content_class && (
+                      <span className="ml-auto px-1.5 py-0.5 rounded bg-bg-hover border border-border text-text-secondary">
+                        {cls.content_class}
+                      </span>
+                    )}
+                    {cls?.is_ai_crypto_related && (
+                      <span className="px-1.5 py-0.5 rounded bg-accent-emerald/10 border border-accent-emerald/30 text-accent-emerald">
+                        AI+crypto
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Network connections — only meaningful for mutual members */}
       {kol.is_mutual_member && (t1Neighbors.length > 0 || t2Neighbors.length > 0) && (

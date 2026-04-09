@@ -324,6 +324,18 @@ export default function Discovery() {
                 Our database already has following data for <span className="text-accent-emerald">12 anchor KOLs</span>.
                 If your seeds overlap with their networks, mutual-follow detection is free.
               </div>
+              <div className="mt-2 text-[10px] text-text-muted font-mono">
+                Try a cached run ($0):{" "}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setImportText("@btcdayu\n@colinwu\n@biteyecn\n@defiteddy2020")
+                  }
+                  className="text-accent-emerald hover:underline bg-transparent border-0 cursor-pointer font-mono p-0"
+                >
+                  @btcdayu @colinwu @biteyecn @defiteddy2020
+                </button>
+              </div>
             </div>
           </div>
         )}
