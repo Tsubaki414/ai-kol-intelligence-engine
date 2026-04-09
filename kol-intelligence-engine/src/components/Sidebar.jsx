@@ -6,7 +6,7 @@ const FULL_FEATURES = [
   { to: "/graph", label: "Network Graph", icon: "🕸️", badge: "CORE" },
   { to: "/outreach", label: "Outreach Panel", icon: "🗝️", badge: "ACTION" },
   { to: "/agent", label: "AI Agent", icon: "🤖" },
-  { to: "/discovery", label: "Discovery Pipeline", icon: "🔍", badge: "⭐" },
+  { to: "/discovery", label: "Discovery Pipeline", icon: "🔍" },
   { to: "/profile", label: "KOL Profiles", icon: "👤" },
   { to: "/export", label: "Export", icon: "📥" },
 ];
@@ -60,7 +60,7 @@ export default function Sidebar() {
           AI KOL Intelligence Engine
         </div>
         <div className="text-[11px] text-text-muted font-mono mt-0.5">
-          Trial Task Demo
+          Mango Labs · KOL Intelligence
         </div>
       </div>
 
