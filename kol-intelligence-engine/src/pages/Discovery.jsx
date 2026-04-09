@@ -111,7 +111,7 @@ export default function Discovery() {
                 : "bg-bg-card border border-border text-text-muted"
             }`}
           >
-            ⭐ Mode B — Import Your Own Seeds
+            Mode B — Import Your Own Seeds
           </button>
         </div>
       </div>
@@ -162,7 +162,7 @@ export default function Discovery() {
           <div className="space-y-6">
             <div className="bg-accent-emerald/5 border border-accent-emerald/30 rounded-lg p-5">
               <h2 className="text-sm font-semibold text-accent-emerald mb-2">
-                ⭐ Import Your Own Seeds
+                Import Your Own Seeds
               </h2>
               <p className="text-xs text-text-secondary leading-relaxed">
                 Paste your own KOL handles (3–20 people you know). The pipeline will: (1) check
