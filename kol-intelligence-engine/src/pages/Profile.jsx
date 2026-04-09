@@ -607,15 +607,27 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Recent tweets — live-fetched from Supabase tweets cache */}
+      {/* Tweet sample — cached pipeline snapshot, NOT a live feed. Every
+          tweet links to its real X URL so the reviewer can verify the
+          snapshot matches reality (and see anything newer on X directly). */}
       <div className="mt-4 bg-bg-card border border-border rounded-lg p-5">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-1">
           <h3 className="text-xs font-mono text-accent-blue uppercase tracking-widest">
-            Recent cached tweets
+            Tweet sample (pipeline snapshot)
           </h3>
-          <div className="text-[10px] font-mono text-text-muted">
-            live from Supabase · tweets table
-          </div>
+          {tweets.length > 0 && tweets[0].fetched_at && (
+            <div className="text-[10px] font-mono text-text-muted">
+              cached{" "}
+              {new Date(tweets[0].fetched_at).toLocaleDateString(undefined, {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })}
+            </div>
+          )}
+        </div>
+        <div className="text-[10px] font-mono text-text-muted mb-3">
+          Snapshot captured by Phase 1d classifier — for the live feed, click any tweet to open on x.com.
         </div>
         {tweetsStatus === "loading" && (
           <div className="text-[11px] font-mono text-text-muted animate-pulse">
@@ -629,40 +641,44 @@ export default function Profile() {
         )}
         {tweetsStatus === "empty" && (
           <div className="text-[11px] font-mono text-text-muted">
-            No cached tweets for @{id} yet. Run the Phase 1d classifier to fetch and
-            analyze their last 20 posts.
+            No cached tweets for @{id} yet — this KOL hasn't been through the
+            Phase 1d classifier. The classifier fetches the last 20 posts per KOL
+            and writes them to the <span className="text-accent-blue">tweets</span> table.
           </div>
         )}
         {tweetsStatus === "ok" && (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {tweets.map((t) => {
               const pm = t.public_metrics || {};
               const cls = t.classification || null;
+              const xUrl = `https://x.com/${id}/status/${t.tweet_id}`;
               return (
-                <div
+                <a
                   key={t.tweet_id}
-                  className="border-l-2 border-border pl-3 py-1"
+                  href={xUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block border-l-2 border-border pl-3 py-1.5 hover:border-accent-blue hover:bg-bg-hover/30 rounded-r transition-colors group"
                 >
-                  <div className="text-[12px] text-text-primary leading-relaxed whitespace-pre-wrap break-words">
+                  <div className="text-[12px] text-text-primary leading-relaxed whitespace-pre-wrap break-words group-hover:text-text-primary">
                     {t.text}
                   </div>
                   <div className="flex items-center gap-3 mt-1.5 text-[10px] font-mono text-text-muted flex-wrap">
                     <span>
                       {t.created_at
-                        ? new Date(t.created_at).toLocaleDateString()
+                        ? new Date(t.created_at).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                          })
                         : "—"}
                     </span>
                     <span>· {t.lang || "??"}</span>
-                    {t.tweet_type && <span>· {t.tweet_type}</span>}
-                    <span className="text-accent-blue">
-                      ♥ {pm.like_count ?? 0}
-                    </span>
-                    <span className="text-accent-emerald">
-                      ↻ {pm.retweet_count ?? 0}
-                    </span>
-                    <span className="text-accent-amber">
-                      💬 {pm.reply_count ?? 0}
-                    </span>
+                    {t.tweet_type && t.tweet_type !== "original" && (
+                      <span>· {t.tweet_type}</span>
+                    )}
+                    <span className="text-accent-blue">♥ {pm.like_count ?? 0}</span>
+                    <span className="text-accent-emerald">↻ {pm.retweet_count ?? 0}</span>
+                    <span className="text-accent-amber">💬 {pm.reply_count ?? 0}</span>
                     {cls?.content_class && (
                       <span className="ml-auto px-1.5 py-0.5 rounded bg-bg-hover border border-border text-text-secondary">
                         {cls.content_class}
@@ -673,8 +689,11 @@ export default function Profile() {
                         AI+crypto
                       </span>
                     )}
+                    <span className="text-accent-blue opacity-0 group-hover:opacity-100 transition-opacity">
+                      view on x.com ↗
+                    </span>
                   </div>
-                </div>
+                </a>
               );
             })}
           </div>

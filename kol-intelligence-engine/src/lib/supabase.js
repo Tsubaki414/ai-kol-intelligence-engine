@@ -16,8 +16,10 @@ const BASE_HEADERS = {
 };
 
 /**
- * Fetch cached recent tweets for one KOL, newest first.
- * Returns [] if the KOL has no cached tweets yet.
+ * Fetch cached tweet sample for one KOL, newest first. The `fetched_at`
+ * field tells the caller when this snapshot was captured — critical for
+ * honest UI labeling since the tweets table is a pipeline cache, not a
+ * live feed of the KOL's X timeline.
  */
 export async function fetchRecentTweets(handle, limit = 10) {
   if (!handle) return [];
@@ -25,7 +27,7 @@ export async function fetchRecentTweets(handle, limit = 10) {
   const url =
     `${SUPABASE_URL}/rest/v1/tweets` +
     `?author_handle=eq.${encodeURIComponent(h)}` +
-    `&select=tweet_id,created_at,text,lang,tweet_type,public_metrics,classification` +
+    `&select=tweet_id,created_at,fetched_at,text,lang,tweet_type,public_metrics,classification` +
     `&order=created_at.desc` +
     `&limit=${limit}`;
 
