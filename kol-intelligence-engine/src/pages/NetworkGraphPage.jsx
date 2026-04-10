@@ -94,17 +94,24 @@ export default function NetworkGraphPage() {
     };
   }, []);
 
-  // Tune physics for large graph (713 nodes)
+  // Tune physics for large graph (713 nodes) — "stars in space" feel.
+  // Stronger repulsion + longer/weaker T2 links give the 27 mutual members
+  // breathing room while pushing watched nodes into a loose outer halo.
   useEffect(() => {
     if (!fgRef.current) return;
     const fg = fgRef.current;
-    // Stronger repulsion so clusters don't collapse into a hairball
-    fg.d3Force("charge")?.strength(-80).distanceMax(300);
-    // Shorter links
+    fg.d3Force("charge")?.strength(-220).distanceMax(450);
     fg.d3Force("link")?.distance((link) => {
-      if (link.tier === 1) return 30;
-      if (link.tier === 2) return 60;
-      return 90;
+      if (link.tier === 1) return 55;  // mutual bonds — let members breathe
+      if (link.tier === 2) return 150; // watched nodes pushed way out
+      return 200;
+    });
+    // Weaken T2 link strength so repulsion dominates → watched nodes
+    // float loosely around the mutual core instead of clustering tight.
+    fg.d3Force("link")?.strength((link) => {
+      if (link.tier === 1) return 0.7;
+      if (link.tier === 2) return 0.08;
+      return 0.04;
     });
     // NOTE: don't touch d3Force("center") strength — the default (0.1) is
     // carefully chosen. Overriding it to 1.0+ collapses 700-node graphs to
@@ -204,6 +211,19 @@ export default function NetworkGraphPage() {
     }
     return ids;
   }, [selectedNode, filteredData.links]);
+
+  // Top-5 mutual members by PageRank get default-on labels ("the headline nodes").
+  // Everything else is unlabeled until hovered/selected — prevents the label-spam
+  // that made the previous version look like a wall of text. Inspired by
+  // mit-bunny/AI_Influencers_X which hides all labels until camera-distance.
+  const headlineNodeIds = useMemo(() => {
+    const top = [...filteredData.nodes]
+      .filter((n) => n.is_mutual_member && n.pagerank != null)
+      .sort((a, b) => (b.pagerank || 0) - (a.pagerank || 0))
+      .slice(0, 5)
+      .map((n) => n.id);
+    return new Set(top);
+  }, [filteredData.nodes]);
 
   // Cluster summary
   const clusterSummary = graphData.metadata.cluster_summary || [];
@@ -481,9 +501,11 @@ export default function NetworkGraphPage() {
               nodeId="id"
               nodeLabel={(n) => `${n.label}`}
               nodeVal={(n) => {
-                if (n.is_mutual_member) return Math.max(8, (n.pagerank || 0) * 350);
-                // Watched: tiny dots — they're not network members, just being followed
-                return 1.5;
+                // Shrunk from pagerank*350 → *180 so the top nodes no longer
+                // look like fat glowing balls crowding the center. Range now
+                // ~4-12 instead of ~8-24.
+                if (n.is_mutual_member) return Math.max(4, (n.pagerank || 0) * 180);
+                return 1.2;
               }}
               nodeColor={(n) => {
                 // Focus mode: when a node is selected, dim everything that isn't
@@ -549,12 +571,20 @@ export default function NetworkGraphPage() {
                   ctx.stroke();
                 }
 
-                // Label only for mutual members + hovered/selected (avoid label spam)
-                // Also suppress labels on dimmed mutual members when focus mode is active.
+                // Label strategy (replaces the old "label every mutual member"
+                // approach that caused overlapping text):
+                //   1. Always: hovered node, selected node
+                //   2. When no selection: top-5 headline nodes (by PageRank)
+                //   3. When zoomed in past globalScale > 2.2: all focused mutual
+                //      members become labeled (camera-distance-style visibility)
+                const isHeadline = headlineNodeIds.has(node.id);
+                const isInteractive =
+                  node === hoveredNode || node === selectedNode;
                 const shouldLabel =
-                  (node.is_mutual_member && isFocused) ||
-                  node === hoveredNode ||
-                  node === selectedNode;
+                  isInteractive ||
+                  (node.is_mutual_member &&
+                    isFocused &&
+                    (isHeadline || globalScale > 2.2));
                 if (shouldLabel) {
                   const fontSize = node.is_mutual_member
                     ? Math.max(10, 13 / globalScale)
