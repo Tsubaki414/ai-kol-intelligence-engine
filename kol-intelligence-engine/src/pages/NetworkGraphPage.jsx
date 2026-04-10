@@ -98,14 +98,17 @@ export default function NetworkGraphPage() {
   useEffect(() => {
     if (!fgRef.current) return;
     const fg = fgRef.current;
-    // Stronger repulsion so clusters don't collapse into a hairball
-    fg.d3Force("charge")?.strength(-80).distanceMax(300);
-    // Shorter links
+    // Stronger repulsion so clusters separate clearly into distinct "islands"
+    // (inspired by mit-bunny/AI_Influencers_X — charge -800 for 300 nodes)
+    fg.d3Force("charge")?.strength(-140).distanceMax(350);
+    // Shorter T1 links → mutual members stick together tightly; T2/T3 spread out
     fg.d3Force("link")?.distance((link) => {
-      if (link.tier === 1) return 30;
-      if (link.tier === 2) return 60;
-      return 90;
+      if (link.tier === 1) return 28;
+      if (link.tier === 2) return 70;
+      return 100;
     });
+    // Slightly tighter centering so the whole graph doesn't drift off-canvas
+    fg.d3Force("center")?.strength(1.1);
   }, [size]);
 
   // Derive filter options from node data (only populated if classified)
@@ -186,6 +189,21 @@ export default function NetworkGraphPage() {
       }));
     return { nodes, links };
   }, [visibleTiers, matchesFilters, showIsolated, connectedNodeIds]);
+
+  // Compute neighbor set for the selected node — used for focus-mode dimming.
+  // Neighbors = any node connected to selectedNode via any currently-visible edge.
+  // When a node is selected, we fade everything else to let the ego network pop.
+  const neighborIds = useMemo(() => {
+    const ids = new Set();
+    if (!selectedNode) return ids;
+    for (const e of filteredData.links) {
+      const s = typeof e.source === "object" ? e.source.id : e.source;
+      const t = typeof e.target === "object" ? e.target.id : e.target;
+      if (s === selectedNode.id) ids.add(t);
+      if (t === selectedNode.id) ids.add(s);
+    }
+    return ids;
+  }, [selectedNode, filteredData.links]);
 
   // Cluster summary
   const clusterSummary = graphData.metadata.cluster_summary || [];
@@ -468,28 +486,67 @@ export default function NetworkGraphPage() {
                 return 1.5;
               }}
               nodeColor={(n) => {
+                // Focus mode: when a node is selected, dim everything that isn't
+                // either the selection itself or a first-degree neighbor.
+                const isFocused =
+                  !selectedNode || n.id === selectedNode.id || neighborIds.has(n.id);
                 if (n.is_mutual_member) {
                   const base = CLUSTER_COLORS[(n.cluster || 0) % CLUSTER_COLORS.length];
-                  return base;
+                  return isFocused ? base : "rgba(42, 46, 56, 0.4)";
                 }
-                // Watched: dim slate (no cluster — not part of the real network)
-                return "rgba(100, 116, 139, 0.45)";
+                // Watched: dim slate by default, even dimmer when focus mode is active
+                return isFocused
+                  ? "rgba(100, 116, 139, 0.45)"
+                  : "rgba(100, 116, 139, 0.15)";
               }}
               nodeCanvasObjectMode={() => "after"}
               nodeCanvasObject={(node, ctx, globalScale) => {
+                const isFocused =
+                  !selectedNode || node.id === selectedNode.id || neighborIds.has(node.id);
+
+                // Glow effect on mutual members — radial gradient gives a "star in
+                // the night sky" feel without needing 3D. Only rendered for focused
+                // nodes; dimmed nodes get no glow so the focus pops.
+                if (node.is_mutual_member && isFocused) {
+                  const base = CLUSTER_COLORS[(node.cluster || 0) % CLUSTER_COLORS.length];
+                  const coreRadius = Math.max(5, (node.pagerank || 0) * 350);
+                  const glowRadius = coreRadius * 2.6;
+                  const gradient = ctx.createRadialGradient(
+                    node.x, node.y, 0,
+                    node.x, node.y, glowRadius
+                  );
+                  // Parse hex → rgb so we can output rgba at varying alpha
+                  const r = parseInt(base.slice(1, 3), 16);
+                  const g = parseInt(base.slice(3, 5), 16);
+                  const b = parseInt(base.slice(5, 7), 16);
+                  gradient.addColorStop(0, `rgba(${r},${g},${b},0.55)`);
+                  gradient.addColorStop(0.35, `rgba(${r},${g},${b},0.18)`);
+                  gradient.addColorStop(1, `rgba(${r},${g},${b},0)`);
+                  ctx.fillStyle = gradient;
+                  ctx.beginPath();
+                  ctx.arc(node.x, node.y, glowRadius, 0, 2 * Math.PI);
+                  ctx.fill();
+                }
+
                 // Watched nodes: render as hollow ring to clearly distinguish from
                 // mutual members (filled circles). This is the visual contract:
                 // filled = in the network, hollow = followed by the network.
                 if (!node.is_mutual_member) {
                   ctx.beginPath();
                   ctx.arc(node.x, node.y, 1.8, 0, 2 * Math.PI);
-                  ctx.strokeStyle = "rgba(148, 163, 184, 0.55)";
+                  ctx.strokeStyle = isFocused
+                    ? "rgba(148, 163, 184, 0.55)"
+                    : "rgba(148, 163, 184, 0.15)";
                   ctx.lineWidth = 0.8;
                   ctx.stroke();
                 }
+
                 // Label only for mutual members + hovered/selected (avoid label spam)
+                // Also suppress labels on dimmed mutual members when focus mode is active.
                 const shouldLabel =
-                  node.is_mutual_member || node === hoveredNode || node === selectedNode;
+                  (node.is_mutual_member && isFocused) ||
+                  node === hoveredNode ||
+                  node === selectedNode;
                 if (shouldLabel) {
                   const fontSize = node.is_mutual_member
                     ? Math.max(10, 13 / globalScale)
@@ -500,8 +557,9 @@ export default function NetworkGraphPage() {
                   ctx.fillStyle = node.is_mutual_member ? "#E6EBF5" : "#94A3B8";
                   ctx.fillText(node.label, node.x, node.y + 9);
                 }
+
                 // Bridge ring on mutual members that span multiple circles
-                if (node.is_mutual_member && node.is_bridge) {
+                if (node.is_mutual_member && node.is_bridge && isFocused) {
                   ctx.beginPath();
                   ctx.arc(
                     node.x,
@@ -515,8 +573,26 @@ export default function NetworkGraphPage() {
                   ctx.stroke();
                 }
               }}
-              linkColor={(link) => TIER_STYLE[link.tier]?.color || "rgba(100,116,139,0.2)"}
-              linkWidth={(link) => TIER_STYLE[link.tier]?.width || 0.5}
+              linkColor={(link) => {
+                const base = TIER_STYLE[link.tier]?.color || "rgba(100,116,139,0.2)";
+                if (!selectedNode) return base;
+                // Focus mode: preserve bright color for edges touching the selection,
+                // dim everything else way down so the ego network is obvious.
+                const s = typeof link.source === "object" ? link.source.id : link.source;
+                const t = typeof link.target === "object" ? link.target.id : link.target;
+                const touchesSelected =
+                  s === selectedNode.id || t === selectedNode.id;
+                return touchesSelected ? base : "rgba(100, 116, 139, 0.06)";
+              }}
+              linkWidth={(link) => {
+                const base = TIER_STYLE[link.tier]?.width || 0.5;
+                if (!selectedNode) return base;
+                const s = typeof link.source === "object" ? link.source.id : link.source;
+                const t = typeof link.target === "object" ? link.target.id : link.target;
+                const touchesSelected =
+                  s === selectedNode.id || t === selectedNode.id;
+                return touchesSelected ? base * 1.4 : base * 0.5;
+              }}
               linkLineDash={(link) => TIER_STYLE[link.tier]?.dash || null}
               linkDirectionalArrowLength={(link) => (link.tier === 2 ? 3 : 0)}
               linkDirectionalArrowRelPos={0.92}
