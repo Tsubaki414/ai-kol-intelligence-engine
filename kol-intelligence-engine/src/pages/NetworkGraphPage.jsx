@@ -98,17 +98,17 @@ export default function NetworkGraphPage() {
   useEffect(() => {
     if (!fgRef.current) return;
     const fg = fgRef.current;
-    // Stronger repulsion so clusters separate clearly into distinct "islands"
-    // (inspired by mit-bunny/AI_Influencers_X — charge -800 for 300 nodes)
-    fg.d3Force("charge")?.strength(-140).distanceMax(350);
-    // Shorter T1 links → mutual members stick together tightly; T2/T3 spread out
+    // Stronger repulsion so clusters don't collapse into a hairball
+    fg.d3Force("charge")?.strength(-80).distanceMax(300);
+    // Shorter links
     fg.d3Force("link")?.distance((link) => {
-      if (link.tier === 1) return 28;
-      if (link.tier === 2) return 70;
-      return 100;
+      if (link.tier === 1) return 30;
+      if (link.tier === 2) return 60;
+      return 90;
     });
-    // Slightly tighter centering so the whole graph doesn't drift off-canvas
-    fg.d3Force("center")?.strength(1.1);
+    // NOTE: don't touch d3Force("center") strength — the default (0.1) is
+    // carefully chosen. Overriding it to 1.0+ collapses 700-node graphs to
+    // a single point during warmup and the page renders blank.
   }, [size]);
 
   // Derive filter options from node data (only populated if classified)
@@ -507,7 +507,15 @@ export default function NetworkGraphPage() {
                 // Glow effect on mutual members — radial gradient gives a "star in
                 // the night sky" feel without needing 3D. Only rendered for focused
                 // nodes; dimmed nodes get no glow so the focus pops.
-                if (node.is_mutual_member && isFocused) {
+                // Guard against undefined x/y (first few render ticks before the
+                // force simulation assigns positions) — createRadialGradient with
+                // NaN coordinates silently fails but logging noise adds up.
+                if (
+                  node.is_mutual_member &&
+                  isFocused &&
+                  Number.isFinite(node.x) &&
+                  Number.isFinite(node.y)
+                ) {
                   const base = CLUSTER_COLORS[(node.cluster || 0) % CLUSTER_COLORS.length];
                   const coreRadius = Math.max(5, (node.pagerank || 0) * 350);
                   const glowRadius = coreRadius * 2.6;
